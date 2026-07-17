@@ -12,12 +12,25 @@ namespace CharacterMatch3
         public Color fallbackColor = Color.white;
     }
 
+    [Serializable]
+    public sealed class CharacterSpecialSpriteEntry
+    {
+        public CharacterType characterType;
+        public PieceKind kind;
+        public LineOrientation lineOrientation;
+        public Sprite sprite;
+    }
+
     [CreateAssetMenu(menuName = "Character Match-3/Character Catalog", fileName = "CharacterCatalog")]
     public sealed class CharacterCatalog : ScriptableObject
     {
         [SerializeField] private List<CharacterSpriteEntry> entries = new List<CharacterSpriteEntry>();
+        [SerializeField] private List<CharacterSpecialSpriteEntry> specialEntries = new List<CharacterSpecialSpriteEntry>();
+        [SerializeField] private Sprite gridCellSprite;
 
         public IReadOnlyList<CharacterSpriteEntry> Entries => entries;
+        public IReadOnlyList<CharacterSpecialSpriteEntry> SpecialEntries => specialEntries;
+        public Sprite GridCellSprite => gridCellSprite;
 
         public void EnsureDefaultEntries()
         {
@@ -54,6 +67,30 @@ namespace CharacterMatch3
             return entry != null ? entry.sprite : null;
         }
 
+        public Sprite GetPieceSprite(CharacterType characterType, PieceKind kind, LineOrientation lineOrientation)
+        {
+            if (kind == PieceKind.Normal || kind == PieceKind.Companion)
+            {
+                return GetSprite(characterType);
+            }
+
+            return GetSpecialSprite(characterType, kind, lineOrientation) ?? GetSprite(characterType);
+        }
+
+        public Sprite GetSpecialSprite(CharacterType characterType, PieceKind kind, LineOrientation lineOrientation)
+        {
+            if (kind == PieceKind.Normal || kind == PieceKind.Companion)
+            {
+                return null;
+            }
+
+            var special = specialEntries.Find(candidate =>
+                candidate.characterType == characterType &&
+                candidate.kind == kind &&
+                (kind != PieceKind.Line || candidate.lineOrientation == lineOrientation));
+            return special?.sprite;
+        }
+
         public void SetSprite(CharacterType characterType, Sprite sprite)
         {
             EnsureDefaultEntries();
@@ -62,6 +99,48 @@ namespace CharacterMatch3
             {
                 entry.sprite = sprite;
             }
+        }
+
+        public void SetSpecialSprite(CharacterType characterType, PieceKind kind, LineOrientation lineOrientation, Sprite sprite)
+        {
+            if (kind == PieceKind.Normal || kind == PieceKind.Companion)
+            {
+                return;
+            }
+
+            var normalizedOrientation = kind == PieceKind.Line ? lineOrientation : LineOrientation.Horizontal;
+            var entry = specialEntries.Find(candidate =>
+                candidate.characterType == characterType &&
+                candidate.kind == kind &&
+                candidate.lineOrientation == normalizedOrientation);
+            if (entry == null)
+            {
+                entry = new CharacterSpecialSpriteEntry
+                {
+                    characterType = characterType,
+                    kind = kind,
+                    lineOrientation = normalizedOrientation
+                };
+                specialEntries.Add(entry);
+            }
+
+            entry.sprite = sprite;
+            specialEntries.Sort((a, b) =>
+            {
+                var characterComparison = a.characterType.CompareTo(b.characterType);
+                if (characterComparison != 0)
+                {
+                    return characterComparison;
+                }
+
+                var kindComparison = a.kind.CompareTo(b.kind);
+                return kindComparison != 0 ? kindComparison : a.lineOrientation.CompareTo(b.lineOrientation);
+            });
+        }
+
+        public void SetGridCellSprite(Sprite sprite)
+        {
+            gridCellSprite = sprite;
         }
 
         public Color GetFallbackColor(CharacterType characterType)

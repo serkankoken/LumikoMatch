@@ -28,3 +28,85 @@ MonoBehaviour:
   - characterType: 4
     sprite: {fileID: 21300000, guid: 25212143aede53d4aa0d6a83238c332e, type: 3}
     fallbackColor: {r: 1, g: 0.78, b: 0.42, a: 1}
+  specialEntries:
+  - characterType: 0
+    kind: 1
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 64bd106f7530d434badd8e7ac09cf418, type: 3}
+  - characterType: 0
+    kind: 1
+    lineOrientation: 1
+    sprite: {fileID: 21300000, guid: 91648a8b1dad6fb46aefe3ce33fad7cd, type: 3}
+  - characterType: 0
+    kind: 2
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 0bbacf4b630005e4589d318a58bed5d1, type: 3}
+  - characterType: 0
+    kind: 3
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 69f169409e981a543b76210847d4e0db, type: 3}
+  - characterType: 1
+    kind: 1
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: aef2b5ede017df44795e678e3ef22086, type: 3}
+  - characterType: 1
+    kind: 1
+    lineOrientation: 1
+    sprite: {fileID: 21300000, guid: 7951efe73e5edc1469b6d8aecb000c68, type: 3}
+  - characterType: 1
+    kind: 2
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 8d785372f7802794f8b8b97922ee7271, type: 3}
+  - characterType: 1
+    kind: 3
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 0f69bab0edac97549b4df386dc8b5d15, type: 3}
+  - characterType: 2
+    kind: 1
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: a4fa5b8273f08bd4f9e9c49abe2605a9, type: 3}
+  - characterType: 2
+    kind: 1
+    lineOrientation: 1
+    sprite: {fileID: 21300000, guid: c9dc2db5d66b47747a6dceacbf7fe43d, type: 3}
+  - characterType: 2
+    kind: 2
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: c8cbe1b82799a244090ea9c1e45639d7, type: 3}
+  - characterType: 2
+    kind: 3
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 8bae51b0df73f2245be0473bb26ab3ae, type: 3}
+  - characterType: 3
+    kind: 1
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 86f3a0dcdbf7be34da7e5721ac8724b4, type: 3}
+  - characterType: 3
+    kind: 1
+    lineOrientation: 1
+    sprite: {fileID: 21300000, guid: 4b9eea61c6560a34bb74ef139efeea98, type: 3}
+  - characterType: 3
+    kind: 2
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 3572dd9d2a10faf42adb26ac6827ac83, type: 3}
+  - characterType: 3
+    kind: 3
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 70bcd01d848937a4c91588ed68291c93, type: 3}
+  - characterType: 4
+    kind: 1
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: cddfe9dc1ef5f8d4487c0324def49558, type: 3}
+  - characterType: 4
+    kind: 1
+    lineOrientation: 1
+    sprite: {fileID: 21300000, guid: c78b215199f1b9142b2d8bd87302fef2, type: 3}
+  - characterType: 4
+    kind: 2
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: b340a5d41b26b874485fbaf1a2d8c15c, type: 3}
+  - characterType: 4
+    kind: 3
+    lineOrientation: 0
+    sprite: {fileID: 21300000, guid: 8f1be0374d58a6a4ea923c3377884265, type: 3}
+  gridCellSprite: {fileID: 21300000, guid: 20cd020bab2eb9f4d9df64ad14b827b1, type: 3}

@@ -12,6 +12,7 @@ namespace CharacterMatch3.Editor
         {
             { "cat", CharacterType.Cat },
             { "bunny", CharacterType.Bunny },
+            { "rabbit", CharacterType.Bunny },
             { "dino", CharacterType.Dino },
             { "penguin", CharacterType.Penguin },
             { "bear", CharacterType.Bear }
@@ -47,6 +48,8 @@ namespace CharacterMatch3.Editor
                 }
             }
 
+            AssignSpecialSprites(catalog);
+            AssignGridCellSprite(catalog);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -93,6 +96,60 @@ namespace CharacterMatch3.Editor
                     yield return sprite;
                 }
             }
+        }
+
+        private static void AssignSpecialSprites(CharacterCatalog catalog)
+        {
+            AssignSpecialSprites(catalog, "Assets/Char/Horzinal_Line", PieceKind.Line, LineOrientation.Horizontal);
+            AssignSpecialSprites(catalog, "Assets/Char/Horizontal_Line", PieceKind.Line, LineOrientation.Horizontal);
+            AssignSpecialSprites(catalog, "Assets/Char/Vertical_Line", PieceKind.Line, LineOrientation.Vertical);
+            AssignSpecialSprites(catalog, "Assets/Char/Burst", PieceKind.Burst, LineOrientation.Horizontal);
+            AssignSpecialSprites(catalog, "Assets/Char/Rainbow", PieceKind.Rainbow, LineOrientation.Horizontal);
+        }
+
+        private static void AssignGridCellSprite(CharacterCatalog catalog)
+        {
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Char/UI/Grid.png");
+            if (sprite != null)
+            {
+                catalog.SetGridCellSprite(sprite);
+            }
+        }
+
+        private static void AssignSpecialSprites(CharacterCatalog catalog, string folder, PieceKind kind, LineOrientation lineOrientation)
+        {
+            if (!AssetDatabase.IsValidFolder(folder))
+            {
+                return;
+            }
+
+            foreach (var guid in AssetDatabase.FindAssets("t:Sprite", new[] { folder }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (sprite == null || !TryResolveCharacterFromFileName(path, out var characterType))
+                {
+                    continue;
+                }
+
+                catalog.SetSpecialSprite(characterType, kind, lineOrientation, sprite);
+            }
+        }
+
+        private static bool TryResolveCharacterFromFileName(string path, out CharacterType characterType)
+        {
+            var name = Path.GetFileNameWithoutExtension(path);
+            foreach (var pair in FileNameToCharacter)
+            {
+                if (name.IndexOf(pair.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    characterType = pair.Value;
+                    return true;
+                }
+            }
+
+            characterType = CharacterType.Cat;
+            return false;
         }
     }
 }

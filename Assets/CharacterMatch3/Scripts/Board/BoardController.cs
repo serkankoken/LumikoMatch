@@ -142,12 +142,21 @@ namespace CharacterMatch3.Board
 
             if (SwapAllowedByTutorial != null && !SwapAllowedByTutorial(from, to))
             {
+                IsInputLocked = true;
+                selectedCoordinate = null;
+                boardView.SetSelected(null);
+                yield return boardView.AnimateSwap(from, to, false);
+                IsInputLocked = false;
                 yield break;
             }
 
             if (!model.CanSwap(from, to))
             {
+                IsInputLocked = true;
+                selectedCoordinate = null;
+                boardView.SetSelected(null);
                 yield return boardView.AnimateSwap(from, to, false);
+                IsInputLocked = false;
                 AudioManager.Instance?.Play(AudioManager.Instance.invalidSwap);
                 yield break;
             }
@@ -176,6 +185,7 @@ namespace CharacterMatch3.Board
             var preferred = to;
             if (isSpecialSwap)
             {
+                boardView.CapturePieceLayout();
                 var result = BoardResolver.ResolveSpecialSwap(model, from, to, level, scoringConfig, CreateResolutionEvents());
                 if (result.Changed)
                 {
@@ -187,6 +197,7 @@ namespace CharacterMatch3.Board
             var cascadeIndex = 0;
             while (true)
             {
+                boardView.CapturePieceLayout();
                 var result = BoardResolver.ResolveCurrentMatches(model, preferred, level, scoringConfig, CreateResolutionEvents(), cascadeIndex);
                 if (!result.Changed)
                 {
@@ -201,6 +212,7 @@ namespace CharacterMatch3.Board
 
             if (level.reshufflingAllowed && !MoveFinder.HasLegalMove(model))
             {
+                boardView.CapturePieceLayout();
                 BoardShuffler.Shuffle(model, shuffleRandom, level.maximumAutomaticReshuffleAttempts);
                 yield return boardView.AnimateBoardSettled();
             }
@@ -213,22 +225,42 @@ namespace CharacterMatch3.Board
         {
             return new BoardResolutionEvents
             {
-                PieceRemoved = (character, kind, coordinate) => PieceRemoved?.Invoke(character, kind, coordinate),
-                SoftCoverLayerRemoved = coordinate => SoftCoverLayerRemoved?.Invoke(coordinate),
+                PieceRemoved = (character, kind, coordinate) =>
+                {
+                    boardView.QueuePieceRemoved(character, kind, coordinate);
+                    PieceRemoved?.Invoke(character, kind, coordinate);
+                },
+                SoftCoverLayerRemoved = coordinate =>
+                {
+                    boardView.QueueBlockerHit(coordinate);
+                    SoftCoverLayerRemoved?.Invoke(coordinate);
+                },
                 CrateLayerRemoved = coordinate =>
                 {
+                    boardView.QueueBlockerHit(coordinate);
                     CrateLayerRemoved?.Invoke(coordinate);
                     AudioManager.Instance?.Play(AudioManager.Instance.blockerBreak);
                 },
-                LockLayerRemoved = coordinate => LockLayerRemoved?.Invoke(coordinate),
+                LockLayerRemoved = coordinate =>
+                {
+                    boardView.QueueBlockerHit(coordinate);
+                    LockLayerRemoved?.Invoke(coordinate);
+                },
                 CompanionDelivered = coordinate =>
                 {
+                    boardView.QueueCompanionDelivered(coordinate);
                     CompanionDelivered?.Invoke(coordinate);
                     AudioManager.Instance?.Play(AudioManager.Instance.tokenDelivered);
                 },
-                ScoreAwarded = (amount, coordinate) => ScoreAwarded?.Invoke(amount, coordinate),
+                ScoreAwarded = (amount, coordinate) =>
+                {
+                    boardView.QueueScorePopup(amount, coordinate);
+                    ScoreAwarded?.Invoke(amount, coordinate);
+                },
+                SpecialCreated = (coordinate, kind) => boardView.QueueSpecialCreated(coordinate, kind),
                 SpecialActivated = (coordinate, kind) =>
                 {
+                    boardView.QueueSpecialActivated(coordinate, kind);
                     if (kind == PieceKind.Line)
                     {
                         AudioManager.Instance?.Play(AudioManager.Instance.lineClear);

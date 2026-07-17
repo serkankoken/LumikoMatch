@@ -60,6 +60,7 @@ namespace CharacterMatch3.Board
             var activated = new HashSet<BoardCoordinate>();
             var affected = new HashSet<BoardCoordinate>();
             ResolveCombination(model, a, pieceA, b, pieceB, affected, activated, level);
+            InvokeSpecialSwapActivations(a, pieceA, b, pieceB, events);
 
             if (pieceA.Kind != PieceKind.Rainbow || pieceB.Kind != PieceKind.Rainbow)
             {
@@ -70,6 +71,24 @@ namespace CharacterMatch3.Board
             ApplyHits(model, affected, new HashSet<BoardCoordinate>(), activated, true, scoring, events, result);
             result.Changed |= ApplyGravityAndRefill(model, level, scoring, events, result);
             return result;
+        }
+
+        private static void InvokeSpecialSwapActivations(
+            BoardCoordinate a,
+            BoardPiece pieceA,
+            BoardCoordinate b,
+            BoardPiece pieceB,
+            BoardResolutionEvents events)
+        {
+            if (pieceA.IsSpecial)
+            {
+                events?.SpecialActivated?.Invoke(a, pieceA.Kind);
+            }
+
+            if (pieceB.IsSpecial)
+            {
+                events?.SpecialActivated?.Invoke(b, pieceB.Kind);
+            }
         }
 
         public static BoardResolveResult ResolveCurrentMatches(
