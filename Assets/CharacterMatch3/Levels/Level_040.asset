@@ -1,0 +1,148 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fec1e08f7ed60f47ae51576ffd53e07, type: 3}
+  m_Name: Level_040
+  m_EditorClassIdentifier: 
+  levelNumber: 40
+  displayName: 'Level 040'
+  difficultyLabel: 2
+  backgroundThemeId: 'sky-steps'
+  boardWidth: 8
+  boardHeight: 9
+  activeCells:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 0
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 0
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 0
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 0
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 0
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 0
+  - 1
+  - 1
+  - 1
+  moveLimit: 24
+  availableCharacterTypes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  randomSeed: 8480
+  reshufflingAllowed: 1
+  maximumAutomaticReshuffleAttempts: 10
+  goals:
+  - goalType: 2
+    characterType: 0
+    amount: 7
+  - goalType: 0
+    characterType: 2
+    amount: 18
+  oneStarScore: 12430
+  twoStarScore: 22374
+  threeStarScore: 34182
+  softCoverPlacements: []
+  cratePlacements:
+  - coordinate: {x: 3, y: 1}
+    layers: 1
+  - coordinate: {x: 5, y: 1}
+    layers: 1
+  - coordinate: {x: 3, y: 2}
+    layers: 1
+  - coordinate: {x: 5, y: 2}
+    layers: 1
+  - coordinate: {x: 3, y: 3}
+    layers: 1
+  - coordinate: {x: 4, y: 3}
+    layers: 1
+  - coordinate: {x: 5, y: 3}
+    layers: 1
+  lockPlacements: []
+  companionTokenStartingPositions: []
+  companionExitCells: []
+  prePlacedNormalPieces: []
+  prePlacedSpecialPieces:
+  - coordinate: {x: 4, y: 4}
+    kind: 3
+    character: 0
+    lineOrientation: 0
+  - coordinate: {x: 5, y: 4}
+    kind: 1
+    character: 2
+    lineOrientation: 1
+  tutorialInstructions: ''
+  tutorialForcedSwap:
+    enabled: 0
+    from: {x: 0, y: 0}
+    to: {x: 0, y: 0}
+

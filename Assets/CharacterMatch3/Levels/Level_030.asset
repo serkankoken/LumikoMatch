@@ -1,0 +1,159 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fec1e08f7ed60f47ae51576ffd53e07, type: 3}
+  m_Name: Level_030
+  m_EditorClassIdentifier: 
+  levelNumber: 30
+  displayName: 'Level 030'
+  difficultyLabel: 2
+  backgroundThemeId: 'lantern-lane'
+  boardWidth: 7
+  boardHeight: 8
+  activeCells:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  moveLimit: 24
+  availableCharacterTypes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  randomSeed: 8110
+  reshufflingAllowed: 1
+  maximumAutomaticReshuffleAttempts: 10
+  goals:
+  - goalType: 2
+    characterType: 0
+    amount: 9
+  - goalType: 1
+    characterType: 0
+    amount: 9
+  - goalType: 0
+    characterType: 0
+    amount: 16
+  oneStarScore: 9680
+  twoStarScore: 17424
+  threeStarScore: 26620
+  softCoverPlacements:
+  - coordinate: {x: 1, y: 2}
+    layers: 1
+  - coordinate: {x: 2, y: 2}
+    layers: 1
+  - coordinate: {x: 3, y: 2}
+    layers: 1
+  - coordinate: {x: 1, y: 3}
+    layers: 1
+  - coordinate: {x: 2, y: 3}
+    layers: 1
+  - coordinate: {x: 3, y: 3}
+    layers: 1
+  - coordinate: {x: 1, y: 4}
+    layers: 1
+  - coordinate: {x: 2, y: 4}
+    layers: 1
+  - coordinate: {x: 3, y: 4}
+    layers: 1
+  cratePlacements:
+  - coordinate: {x: 3, y: 4}
+    layers: 1
+  - coordinate: {x: 4, y: 4}
+    layers: 1
+  - coordinate: {x: 5, y: 4}
+    layers: 1
+  - coordinate: {x: 3, y: 5}
+    layers: 1
+  - coordinate: {x: 4, y: 5}
+    layers: 1
+  - coordinate: {x: 5, y: 5}
+    layers: 1
+  - coordinate: {x: 3, y: 6}
+    layers: 1
+  - coordinate: {x: 4, y: 6}
+    layers: 1
+  - coordinate: {x: 5, y: 6}
+    layers: 1
+  lockPlacements:
+  - coordinate: {x: 3, y: 4}
+    layers: 2
+  - coordinate: {x: 2, y: 4}
+    layers: 1
+  - coordinate: {x: 4, y: 4}
+    layers: 1
+  companionTokenStartingPositions: []
+  companionExitCells: []
+  prePlacedNormalPieces:
+  - coordinate: {x: 3, y: 4}
+    kind: 0
+    character: 0
+    lineOrientation: 0
+  prePlacedSpecialPieces: []
+  tutorialInstructions: ''
+  tutorialForcedSwap:
+    enabled: 0
+    from: {x: 0, y: 0}
+    to: {x: 0, y: 0}
+

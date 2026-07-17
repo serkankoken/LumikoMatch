@@ -1,0 +1,30 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e8ba396a0d9f604ca66d8b9e38c368e, type: 3}
+  m_Name: CharacterCatalog
+  m_EditorClassIdentifier: 
+  entries:
+  - characterType: 0
+    sprite: {fileID: 21300000, guid: 003954eb92043d848b356f03213c4f14, type: 3}
+    fallbackColor: {r: 1, g: 0.54, b: 0.48, a: 1}
+  - characterType: 1
+    sprite: {fileID: 21300000, guid: aa84511ce4438c54b9f3f6bd6470d2af, type: 3}
+    fallbackColor: {r: 0.66, g: 0.78, b: 1, a: 1}
+  - characterType: 2
+    sprite: {fileID: 21300000, guid: 720413e2f24591f4daecfcbfbc04185b, type: 3}
+    fallbackColor: {r: 0.54, g: 0.88, b: 0.5, a: 1}
+  - characterType: 3
+    sprite: {fileID: 21300000, guid: 14ca4276b0d7928409d078880b06d5a9, type: 3}
+    fallbackColor: {r: 0.52, g: 0.9, b: 1, a: 1}
+  - characterType: 4
+    sprite: {fileID: 21300000, guid: 25212143aede53d4aa0d6a83238c332e, type: 3}
+    fallbackColor: {r: 1, g: 0.78, b: 0.42, a: 1}
