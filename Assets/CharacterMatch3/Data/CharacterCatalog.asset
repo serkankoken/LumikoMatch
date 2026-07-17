@@ -109,4 +109,3 @@ MonoBehaviour:
     kind: 3
     lineOrientation: 0
     sprite: {fileID: 21300000, guid: 8f1be0374d58a6a4ea923c3377884265, type: 3}
-  gridCellSprite: {fileID: 21300000, guid: 20cd020bab2eb9f4d9df64ad14b827b1, type: 3}

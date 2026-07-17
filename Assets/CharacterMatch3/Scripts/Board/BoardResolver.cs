@@ -122,7 +122,11 @@ namespace CharacterMatch3.Board
                     continue;
                 }
 
-                var spawnCoordinate = group.GetSpecialCoordinate(preferredSpecialCoordinate);
+                if (!TryGetSpecialSpawnCoordinate(model, group, preferredSpecialCoordinate, out var spawnCoordinate))
+                {
+                    continue;
+                }
+
                 var kind = group.CreatedSpecialKind;
                 var orientation = kind == PieceKind.Line ? group.CreatedLineOrientation : LineOrientation.Horizontal;
                 specialSpawnCells[spawnCoordinate] = BoardPiece.Special(kind, group.Character, orientation, model.CreatePieceId());
@@ -357,9 +361,10 @@ namespace CharacterMatch3.Board
             BoardPiece piece,
             HashSet<BoardCoordinate> affected,
             HashSet<BoardCoordinate> activated,
-            LevelDefinition level)
+            LevelDefinition level,
+            bool alreadyActivated = false)
         {
-            if (piece == null || !MarkActivated(coordinate, piece, activated))
+            if (piece == null || (!alreadyActivated && !MarkActivated(coordinate, piece, activated)))
             {
                 return;
             }
@@ -437,7 +442,7 @@ namespace CharacterMatch3.Board
             {
                 var activation = queue.Dequeue();
                 var chainedAffected = new HashSet<BoardCoordinate>();
-                CollectSpecialEffect(model, activation.Coordinate, activation.Piece, chainedAffected, activated, null);
+                CollectSpecialEffect(model, activation.Coordinate, activation.Piece, chainedAffected, activated, null, true);
                 foreach (var coordinate in chainedAffected)
                 {
                     var piece = model.GetCell(coordinate)?.Piece;
@@ -453,6 +458,51 @@ namespace CharacterMatch3.Board
                     HitCell(model, coordinate, false, scoring, events, result, cascadeIndex);
                 }
             }
+        }
+
+        private static bool TryGetSpecialSpawnCoordinate(
+            BoardModel model,
+            MatchGroup group,
+            BoardCoordinate preferred,
+            out BoardCoordinate spawnCoordinate)
+        {
+            var primary = group.GetSpecialCoordinate(preferred);
+            if (CanCreateSpecialAt(model, primary))
+            {
+                spawnCoordinate = primary;
+                return true;
+            }
+
+            var bestDistance = int.MaxValue;
+            var found = false;
+            spawnCoordinate = default;
+            foreach (var coordinate in group.Cells)
+            {
+                if (!CanCreateSpecialAt(model, coordinate))
+                {
+                    continue;
+                }
+
+                var dx = coordinate.x - primary.x;
+                var dy = coordinate.y - primary.y;
+                var distance = dx * dx + dy * dy;
+                if (found && distance >= bestDistance)
+                {
+                    continue;
+                }
+
+                found = true;
+                bestDistance = distance;
+                spawnCoordinate = coordinate;
+            }
+
+            return found;
+        }
+
+        private static bool CanCreateSpecialAt(BoardModel model, BoardCoordinate coordinate)
+        {
+            var piece = model.GetCell(coordinate)?.Piece;
+            return piece != null && piece.Kind == PieceKind.Normal;
         }
 
         private static void HitCell(

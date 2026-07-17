@@ -14,7 +14,6 @@ namespace CharacterMatch3.Board
 
         private BoardView boardView;
         private Image background;
-        private Image gridPlate;
         private Image pieceImage;
         private Image softCoverImage;
         private Image specialOverlayPrimary;
@@ -48,8 +47,8 @@ namespace CharacterMatch3.Board
 
             if (cell == null || !cell.Active)
             {
+                background.sprite = null;
                 background.color = new Color(0f, 0f, 0f, 0.08f);
-                gridPlate.enabled = false;
                 pieceImage.enabled = false;
                 softCoverImage.enabled = false;
                 specialOverlayPrimary.enabled = false;
@@ -59,7 +58,8 @@ namespace CharacterMatch3.Board
                 return;
             }
 
-            ApplyBackground(catalog, selected);
+            background.sprite = null;
+            background.color = selected ? new Color(1f, 0.93f, 0.35f, 0.95f) : new Color(1f, 1f, 1f, 0.36f);
             softCoverImage.enabled = cell.SoftCoverLayers > 0;
             specialOverlayPrimary.enabled = false;
             specialOverlaySecondary.enabled = false;
@@ -281,11 +281,6 @@ namespace CharacterMatch3.Board
             background.color = new Color(1f, 1f, 1f, 0.35f);
             background.raycastTarget = true;
 
-            gridPlate = UIFactory.CreateImage("GridPlate", transform, Color.white);
-            gridPlate.raycastTarget = false;
-            gridPlate.enabled = false;
-            UIFactory.SetAnchored(gridPlate.rectTransform, Vector2.zero, Vector2.one, new Vector2(7, 7), new Vector2(-7, -7));
-
             softCoverImage = UIFactory.CreateImage("SoftCover", transform, Color.clear);
             softCoverImage.raycastTarget = false;
             UIFactory.Stretch(softCoverImage.rectTransform);
@@ -357,18 +352,6 @@ namespace CharacterMatch3.Board
             }
 
             UIFactory.SetAnchored(pieceImage.rectTransform, Vector2.zero, Vector2.one, new Vector2(inset, inset), new Vector2(-inset, -inset));
-        }
-
-        private void ApplyBackground(CharacterCatalog catalog, bool selected)
-        {
-            var gridSprite = catalog != null ? catalog.GridCellSprite : null;
-            background.sprite = null;
-            background.color = selected ? new Color(1f, 0.93f, 0.35f, 0.5f) : new Color(1f, 1f, 1f, 0.08f);
-            gridPlate.enabled = gridSprite != null;
-            gridPlate.sprite = gridSprite;
-            gridPlate.type = Image.Type.Simple;
-            gridPlate.preserveAspect = false;
-            gridPlate.color = selected ? new Color(1f, 0.92f, 0.46f, 1f) : Color.white;
         }
 
         private static void SetOverlayRect(RectTransform rectTransform, Vector2 anchorMin, Vector2 anchorMax)

@@ -92,6 +92,7 @@ namespace CharacterMatch3.Core
 
         public void RestartLevel()
         {
+            GameState.ClearMapProgression();
             SceneManager.LoadScene("Gameplay");
         }
 
@@ -102,8 +103,8 @@ namespace CharacterMatch3.Core
 
         public void PlayNextLevel()
         {
-            GameState.SelectedLevelNumber = Mathf.Min(CharacterMatch3Constants.LastLevel, level.levelNumber + 1);
-            SceneManager.LoadScene("Gameplay");
+            QueueMapProgressionToNextLevel();
+            SceneManager.LoadScene("LevelMap");
         }
 
         public void Pause()
@@ -203,8 +204,30 @@ namespace CharacterMatch3.Core
 
             var stars = Mathf.Max(1, scoreManager.GetStars(level));
             SaveManager.RecordLevelWin(level.levelNumber, scoreManager.Score, stars);
+            QueueMapProgressionToNextLevel();
             AudioManager.Instance?.Play(AudioManager.Instance.win);
             gameplayUI.ShowWinPanel(scoreManager.Score, stars);
+        }
+
+        private void QueueMapProgressionToNextLevel()
+        {
+            if (level == null || level.levelNumber >= CharacterMatch3Constants.LastLevel)
+            {
+                GameState.SelectedLevelNumber = level != null ? level.levelNumber : GameState.SelectedLevelNumber;
+                GameState.ClearMapProgression();
+                return;
+            }
+
+            var nextLevel = Mathf.Min(CharacterMatch3Constants.LastLevel, level.levelNumber + 1);
+            if (SaveManager.IsLevelUnlocked(nextLevel))
+            {
+                GameState.QueueMapProgression(level.levelNumber, nextLevel);
+            }
+            else
+            {
+                GameState.SelectedLevelNumber = level.levelNumber;
+                GameState.ClearMapProgression();
+            }
         }
 
         private IEnumerator LoseFlow()

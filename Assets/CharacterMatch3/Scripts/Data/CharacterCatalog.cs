@@ -26,11 +26,9 @@ namespace CharacterMatch3
     {
         [SerializeField] private List<CharacterSpriteEntry> entries = new List<CharacterSpriteEntry>();
         [SerializeField] private List<CharacterSpecialSpriteEntry> specialEntries = new List<CharacterSpecialSpriteEntry>();
-        [SerializeField] private Sprite gridCellSprite;
 
         public IReadOnlyList<CharacterSpriteEntry> Entries => entries;
         public IReadOnlyList<CharacterSpecialSpriteEntry> SpecialEntries => specialEntries;
-        public Sprite GridCellSprite => gridCellSprite;
 
         public void EnsureDefaultEntries()
         {
@@ -136,11 +134,6 @@ namespace CharacterMatch3
                 var kindComparison = a.kind.CompareTo(b.kind);
                 return kindComparison != 0 ? kindComparison : a.lineOrientation.CompareTo(b.lineOrientation);
             });
-        }
-
-        public void SetGridCellSprite(Sprite sprite)
-        {
-            gridCellSprite = sprite;
         }
 
         public Color GetFallbackColor(CharacterType characterType)

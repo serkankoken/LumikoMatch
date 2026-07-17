@@ -49,7 +49,6 @@ namespace CharacterMatch3.Editor
             }
 
             AssignSpecialSprites(catalog);
-            AssignGridCellSprite(catalog);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -105,15 +104,6 @@ namespace CharacterMatch3.Editor
             AssignSpecialSprites(catalog, "Assets/Char/Vertical_Line", PieceKind.Line, LineOrientation.Vertical);
             AssignSpecialSprites(catalog, "Assets/Char/Burst", PieceKind.Burst, LineOrientation.Horizontal);
             AssignSpecialSprites(catalog, "Assets/Char/Rainbow", PieceKind.Rainbow, LineOrientation.Horizontal);
-        }
-
-        private static void AssignGridCellSprite(CharacterCatalog catalog)
-        {
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Char/UI/Grid.png");
-            if (sprite != null)
-            {
-                catalog.SetGridCellSprite(sprite);
-            }
         }
 
         private static void AssignSpecialSprites(CharacterCatalog catalog, string folder, PieceKind kind, LineOrientation lineOrientation)

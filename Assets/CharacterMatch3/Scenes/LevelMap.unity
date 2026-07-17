@@ -46,6 +46,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelLibrary: {fileID: 11400000, guid: bb5853b9cef64bbe8f367b63a7702f38, type: 2}
   characterCatalog: {fileID: 11400000, guid: 4ea4496a620b4b86ba8725993b41b93e, type: 2}
+  backgroundSprite: {fileID: 21300000, guid: a68352976f7248f499c4149e5a8c7359, type: 3}
+  unlockedNodeSprite: {fileID: 0}
+  currentNodeSprite: {fileID: 0}
+  lockedNodeSprite: {fileID: 0}
+  playerMarkerSprite: {fileID: 0}
+  stepAnimationDuration: 0.75
+  stepPauseDuration: 0.12
 --- !u!1 &200000
 GameObject:
   m_ObjectHideFlags: 0

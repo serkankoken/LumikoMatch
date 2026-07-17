@@ -201,10 +201,25 @@ namespace CharacterMatch3.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             CreateCamera();
             var root = new GameObject("LevelMap", typeof(LevelMapUI));
-            root.GetComponent<LevelMapUI>().Configure(library, catalog);
+            var map = root.GetComponent<LevelMapUI>();
+            map.Configure(library, catalog);
+            AssignMapBackground(map);
             EditorUtility.SetDirty(root);
             CreateEventSystem();
             EditorSceneManager.SaveScene(scene, $"{CharacterMatch3Constants.RootPath}/Scenes/LevelMap.unity");
+        }
+
+        private static void AssignMapBackground(LevelMapUI map)
+        {
+            var background = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Char/UI/BG.png");
+            if (background == null)
+            {
+                return;
+            }
+
+            var serialized = new SerializedObject(map);
+            serialized.FindProperty("backgroundSprite").objectReferenceValue = background;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateGameplayScene(CharacterCatalog catalog, LevelLibrary library, ScoringConfig scoring, Match3InputSettings inputSettings)

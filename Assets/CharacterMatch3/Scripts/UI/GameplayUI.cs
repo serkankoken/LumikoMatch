@@ -205,7 +205,7 @@ namespace CharacterMatch3.UI
             AddPanelButton(pausePanel, "Settings", () => session.ShowSettings(), 2);
             AddPanelButton(pausePanel, "Exit", () => session.ExitToMap(), 3);
 
-            winPanel = CreateModalPanel("WinPanel", "Level Complete", "Next Level", () => session.PlayNextLevel());
+            winPanel = CreateModalPanel("WinPanel", "Level Complete", "Continue", () => session.PlayNextLevel());
             AddPanelButton(winPanel, "Replay", () => session.RestartLevel(), 1);
             AddPanelButton(winPanel, "Exit", () => session.ExitToMap(), 2);
 
