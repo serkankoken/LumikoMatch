@@ -15,6 +15,11 @@ namespace CharacterMatch3.Editor
                 return;
             }
 
+            if (normalized.StartsWith("Assets/Char/UI/Maps/", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             var importer = (TextureImporter)assetImporter;
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;

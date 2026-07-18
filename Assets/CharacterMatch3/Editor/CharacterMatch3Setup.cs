@@ -211,15 +211,7 @@ namespace CharacterMatch3.Editor
 
         private static void AssignMapBackground(LevelMapUI map)
         {
-            var background = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Char/UI/BG.png");
-            if (background == null)
-            {
-                return;
-            }
-
-            var serialized = new SerializedObject(map);
-            serialized.FindProperty("backgroundSprite").objectReferenceValue = background;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            LevelMapBackgroundTools.AssignAvailableSpritesToMap(map);
         }
 
         private static void CreateGameplayScene(CharacterCatalog catalog, LevelLibrary library, ScoringConfig scoring, Match3InputSettings inputSettings)
