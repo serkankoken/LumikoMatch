@@ -32,6 +32,7 @@ namespace CharacterMatch3.Board
         private enum BoardVisualEffectType
         {
             PieceRemoved,
+            SoftCoverBroken,
             BlockerHit,
             SpecialCreated,
             SpecialActivated,
@@ -174,6 +175,11 @@ namespace CharacterMatch3.Board
         public void QueueBlockerHit(BoardCoordinate coordinate)
         {
             pendingPreRefreshEffects.Add(new BoardVisualEffect(BoardVisualEffectType.BlockerHit, coordinate, new Color(1f, 0.82f, 0.34f)));
+        }
+
+        public void QueueSoftCoverRemoved(BoardCoordinate coordinate)
+        {
+            pendingPreRefreshEffects.Add(new BoardVisualEffect(BoardVisualEffectType.SoftCoverBroken, coordinate, new Color(0.65f, 0.93f, 1f)));
         }
 
         public void QueueCompanionDelivered(BoardCoordinate coordinate)
@@ -493,6 +499,10 @@ namespace CharacterMatch3.Board
                     }
 
                     break;
+                case BoardVisualEffectType.SoftCoverBroken:
+                    SpawnBurst(effect.Coordinate, effect.Color, 9, 58f);
+                    yield return AnimateSoftCoverBreak(effect.Coordinate, effect.Color, 0.32f);
+                    break;
                 case BoardVisualEffectType.BlockerHit:
                     SpawnBurst(effect.Coordinate, effect.Color, 7, 48f);
                     if (view != null)
@@ -717,6 +727,48 @@ namespace CharacterMatch3.Board
             }
 
             Destroy(root);
+        }
+
+        private IEnumerator AnimateSoftCoverBreak(BoardCoordinate coordinate, Color fallbackColor, float duration)
+        {
+            if (effectsRoot == null)
+            {
+                yield break;
+            }
+
+            var brokenSprite = catalog != null ? catalog.SoftCoverBrokenSprite : null;
+            if (brokenSprite == null)
+            {
+                yield return AnimateCellFlash(coordinate, fallbackColor, duration, 0.96f, 1.08f);
+                yield break;
+            }
+
+            var overlay = new GameObject("SoftCoverBreak", typeof(RectTransform), typeof(Image));
+            overlay.transform.SetParent(effectsRoot, false);
+
+            var rect = overlay.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = GetEffectPosition(coordinate);
+            rect.sizeDelta = GetEffectCellSize();
+
+            var image = overlay.GetComponent<Image>();
+            image.sprite = brokenSprite;
+            image.preserveAspect = false;
+            image.raycastTarget = false;
+
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var fadeIn = Mathf.Clamp01(t / 0.18f);
+                var fadeOut = Mathf.Clamp01((t - 0.18f) / 0.82f);
+                image.color = new Color(1f, 1f, 1f, Mathf.Lerp(fadeIn, 0f, EaseInCubic(fadeOut)));
+                rect.localScale = Vector3.one * Mathf.Lerp(0.99f, 1.06f, EaseOutCubic(t));
+                yield return null;
+            }
+
+            Destroy(overlay);
         }
 
         private IEnumerator AnimateCellFlash(BoardCoordinate coordinate, Color color, float duration, float startScale, float endScale)

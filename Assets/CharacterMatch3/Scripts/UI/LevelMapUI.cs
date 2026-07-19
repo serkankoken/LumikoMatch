@@ -12,8 +12,8 @@ namespace CharacterMatch3.UI
     {
         private const int LevelsPerMapSegment = 6;
         private const int SegmentThemeCount = 3;
-        private const float NodeSize = 96f;
-        private const float MarkerSize = 76f;
+        private const float NodeSize = 112f;
+        private const float MarkerSize = 88f;
         private const float ReferenceMapWidth = 1080f;
         private const float FallbackMapSegmentHeight = 1920f;
         private const float MinimumMapSegmentHeight = 820f;
@@ -449,14 +449,14 @@ namespace CharacterMatch3.UI
                 image.preserveAspect = true;
                 var numberLabel = node.transform.Find("Label").GetComponent<Text>();
                 numberLabel.fontStyle = FontStyle.Bold;
-                numberLabel.fontSize = 44;
-                numberLabel.resizeTextMaxSize = 44;
+                numberLabel.fontSize = 50;
+                numberLabel.resizeTextMaxSize = 50;
 
-                var starsLabel = UIFactory.CreateText("Stars", node.transform, string.Empty, 24, TextAnchor.LowerCenter, new Color(0.4f, 0.24f, 0.02f));
+                var starsLabel = UIFactory.CreateText("Stars", node.transform, string.Empty, 27, TextAnchor.LowerCenter, new Color(0.4f, 0.24f, 0.02f));
                 starsLabel.fontStyle = FontStyle.Bold;
                 UIFactory.Stretch(starsLabel.rectTransform);
 
-                var badgeLabel = UIFactory.CreateText("Badge", node.transform, string.Empty, 24, TextAnchor.UpperCenter, Color.white);
+                var badgeLabel = UIFactory.CreateText("Badge", node.transform, string.Empty, 27, TextAnchor.UpperCenter, Color.white);
                 badgeLabel.fontStyle = FontStyle.Bold;
                 UIFactory.SetAnchored(badgeLabel.rectTransform, new Vector2(-0.18f, 0.82f), new Vector2(1.18f, 1.23f), Vector2.zero, Vector2.zero);
 

@@ -109,3 +109,5 @@ MonoBehaviour:
     kind: 3
     lineOrientation: 0
     sprite: {fileID: 21300000, guid: 8f1be0374d58a6a4ea923c3377884265, type: 3}
+  softCoverSprite: {fileID: 21300000, guid: 134b2bc48d4c97f41964721fc5c711da, type: 3}
+  softCoverBrokenSprite: {fileID: 21300000, guid: 9a89b3408766cad41b7e974b59044af5, type: 3}

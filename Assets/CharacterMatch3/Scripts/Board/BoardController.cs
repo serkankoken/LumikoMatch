@@ -232,7 +232,7 @@ namespace CharacterMatch3.Board
                 },
                 SoftCoverLayerRemoved = coordinate =>
                 {
-                    boardView.QueueBlockerHit(coordinate);
+                    boardView.QueueSoftCoverRemoved(coordinate);
                     SoftCoverLayerRemoved?.Invoke(coordinate);
                 },
                 CrateLayerRemoved = coordinate =>

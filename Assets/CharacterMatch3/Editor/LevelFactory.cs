@@ -597,7 +597,7 @@ namespace CharacterMatch3.Editor
         {
             if (level.IsActive(x, y))
             {
-                level.softCoverPlacements.Add(new CellLayerData(x, y, layers));
+                AddOrIncreaseLayer(level.softCoverPlacements, new BoardCoordinate(x, y), layers);
             }
         }
 
@@ -616,7 +616,7 @@ namespace CharacterMatch3.Editor
         {
             if (level.IsActive(x, y))
             {
-                level.cratePlacements.Add(new CellLayerData(x, y, layers));
+                AddOrIncreaseLayer(level.cratePlacements, new BoardCoordinate(x, y), layers);
             }
         }
 
@@ -635,8 +635,27 @@ namespace CharacterMatch3.Editor
         {
             if (level.IsActive(x, y))
             {
-                level.lockPlacements.Add(new CellLayerData(x, y, layers));
+                AddOrIncreaseLayer(level.lockPlacements, new BoardCoordinate(x, y), layers);
             }
+        }
+
+        private static void AddOrIncreaseLayer(List<CellLayerData> placements, BoardCoordinate coordinate, int layers)
+        {
+            var layerCount = Mathf.Max(1, layers);
+            for (var i = 0; i < placements.Count; i++)
+            {
+                if (placements[i].coordinate != coordinate)
+                {
+                    continue;
+                }
+
+                var placement = placements[i];
+                placement.layers += layerCount;
+                placements[i] = placement;
+                return;
+            }
+
+            placements.Add(new CellLayerData(coordinate.x, coordinate.y, layerCount));
         }
 
         private static void AddCompanion(LevelDefinition level, int startX, int startY, int exitX, int exitY)

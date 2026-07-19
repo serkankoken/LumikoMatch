@@ -14,6 +14,8 @@ namespace CharacterMatch3.Board
         private static readonly Color InactiveCellColor = new Color(0f, 0f, 0f, 0.06f);
         private static readonly Color ActiveCellColor = new Color(1f, 1f, 1f, 0.16f);
         private static readonly Color SelectedCellColor = new Color(1f, 0.93f, 0.35f, 0.95f);
+        private static readonly Color SoftCoverSingleLayerFallbackColor = new Color(0.65f, 0.93f, 0.98f, 0.5f);
+        private static readonly Color SoftCoverMultiLayerFallbackColor = new Color(0.38f, 0.83f, 0.92f, 0.72f);
 
         private BoardView boardView;
         private Image background;
@@ -54,6 +56,7 @@ namespace CharacterMatch3.Board
                 background.color = InactiveCellColor;
                 pieceImage.enabled = false;
                 softCoverImage.enabled = false;
+                softCoverImage.sprite = null;
                 specialOverlayPrimary.enabled = false;
                 specialOverlaySecondary.enabled = false;
                 pieceLabel.text = string.Empty;
@@ -66,9 +69,15 @@ namespace CharacterMatch3.Board
             softCoverImage.enabled = cell.SoftCoverLayers > 0;
             specialOverlayPrimary.enabled = false;
             specialOverlaySecondary.enabled = false;
-            softCoverImage.color = cell.SoftCoverLayers > 1
-                ? new Color(0.38f, 0.83f, 0.92f, 0.72f)
-                : new Color(0.65f, 0.93f, 0.98f, 0.5f);
+            var softCoverSprite = catalog != null ? catalog.SoftCoverSprite : null;
+            softCoverImage.sprite = softCoverImage.enabled ? softCoverSprite : null;
+            softCoverImage.color = softCoverImage.enabled
+                ? softCoverSprite != null
+                    ? Color.white
+                    : cell.SoftCoverLayers > 1
+                        ? SoftCoverMultiLayerFallbackColor
+                        : SoftCoverSingleLayerFallbackColor
+                : Color.clear;
 
             blockerLabel.text = string.Empty;
             if (cell.CrateLayers > 0)
@@ -285,6 +294,7 @@ namespace CharacterMatch3.Board
             background.raycastTarget = true;
 
             softCoverImage = UIFactory.CreateImage("SoftCover", transform, Color.clear);
+            softCoverImage.preserveAspect = false;
             softCoverImage.raycastTarget = false;
             UIFactory.Stretch(softCoverImage.rectTransform);
 

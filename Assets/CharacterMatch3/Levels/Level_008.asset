@@ -87,7 +87,7 @@ MonoBehaviour:
   threeStarScore: 11646
   softCoverPlacements:
   - coordinate: {x: 1, y: 1}
-    layers: 1
+    layers: 2
   - coordinate: {x: 2, y: 1}
     layers: 1
   - coordinate: {x: 3, y: 1}
@@ -95,7 +95,7 @@ MonoBehaviour:
   - coordinate: {x: 4, y: 1}
     layers: 1
   - coordinate: {x: 5, y: 1}
-    layers: 1
+    layers: 2
   - coordinate: {x: 1, y: 2}
     layers: 1
   - coordinate: {x: 2, y: 2}
@@ -127,7 +127,7 @@ MonoBehaviour:
   - coordinate: {x: 5, y: 4}
     layers: 1
   - coordinate: {x: 1, y: 5}
-    layers: 1
+    layers: 2
   - coordinate: {x: 2, y: 5}
     layers: 1
   - coordinate: {x: 3, y: 5}
@@ -135,15 +135,7 @@ MonoBehaviour:
   - coordinate: {x: 4, y: 5}
     layers: 1
   - coordinate: {x: 5, y: 5}
-    layers: 1
-  - coordinate: {x: 1, y: 1}
-    layers: 1
-  - coordinate: {x: 5, y: 1}
-    layers: 1
-  - coordinate: {x: 1, y: 5}
-    layers: 1
-  - coordinate: {x: 5, y: 5}
-    layers: 1
+    layers: 2
   cratePlacements: []
   lockPlacements: []
   companionTokenStartingPositions: []

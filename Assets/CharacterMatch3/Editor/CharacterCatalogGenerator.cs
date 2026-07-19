@@ -18,6 +18,9 @@ namespace CharacterMatch3.Editor
             { "bear", CharacterType.Bear }
         };
 
+        private const string SoftCoverSpritePath = "Assets/Char/UI/Grid/softcovernormal-Photoroom.png";
+        private const string SoftCoverBrokenSpritePath = "Assets/Char/UI/Grid/softcoverbroken-Photoroom.png";
+
         [MenuItem("Character Match-3/Create Character Catalog")]
         public static CharacterCatalog CreateOrUpdateCatalogMenu()
         {
@@ -49,6 +52,7 @@ namespace CharacterMatch3.Editor
             }
 
             AssignSpecialSprites(catalog);
+            AssignBoardSprites(catalog);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -124,6 +128,13 @@ namespace CharacterMatch3.Editor
 
                 catalog.SetSpecialSprite(characterType, kind, lineOrientation, sprite);
             }
+        }
+
+        private static void AssignBoardSprites(CharacterCatalog catalog)
+        {
+            var softCover = AssetDatabase.LoadAssetAtPath<Sprite>(SoftCoverSpritePath);
+            var softCoverBroken = AssetDatabase.LoadAssetAtPath<Sprite>(SoftCoverBrokenSpritePath);
+            catalog.SetSoftCoverSprites(softCover, softCoverBroken);
         }
 
         private static bool TryResolveCharacterFromFileName(string path, out CharacterType characterType)

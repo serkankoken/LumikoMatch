@@ -70,7 +70,7 @@ namespace CharacterMatch3.Board
                 var cell = model.GetCell(placement.coordinate);
                 if (cell is { Active: true })
                 {
-                    cell.SoftCoverLayers = Mathf.Max(cell.SoftCoverLayers, placement.layers);
+                    cell.SoftCoverLayers += Mathf.Max(0, placement.layers);
                 }
             }
 
@@ -79,7 +79,7 @@ namespace CharacterMatch3.Board
                 var cell = model.GetCell(placement.coordinate);
                 if (cell is { Active: true })
                 {
-                    cell.CrateLayers = Mathf.Max(cell.CrateLayers, placement.layers);
+                    cell.CrateLayers += Mathf.Max(0, placement.layers);
                     cell.Piece = null;
                 }
             }
@@ -89,7 +89,7 @@ namespace CharacterMatch3.Board
                 var cell = model.GetCell(placement.coordinate);
                 if (cell is { Active: true, CrateLayers: <= 0 })
                 {
-                    cell.LockLayers = Mathf.Max(cell.LockLayers, placement.layers);
+                    cell.LockLayers += Mathf.Max(0, placement.layers);
                 }
             }
 
