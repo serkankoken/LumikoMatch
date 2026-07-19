@@ -165,10 +165,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelLibrary: {fileID: 11400000, guid: bb5853b9cef64bbe8f367b63a7702f38, type: 2}
   characterCatalog: {fileID: 11400000, guid: 4ea4496a620b4b86ba8725993b41b93e, type: 2}
-  backgroundSprite: {fileID: 21300000, guid: efd30dca88cbc1a4ca8b090ee18626b8, type: 3}
+  backgroundSprite: {fileID: 21300000, guid: a68352976f7248f499c4149e5a8c7359, type: 3}
   mapMeadowSprite: {fileID: 21300000, guid: efd30dca88cbc1a4ca8b090ee18626b8, type: 3}
   mapBeachSprite: {fileID: 21300000, guid: e7b1a24cc988f9d468787c663000c9f6, type: 3}
   mapDesertSprite: {fileID: 21300000, guid: d419e8576d1396043b06a9eefdbcc723, type: 3}
+  useSingleBackgroundSprite: 1
   unlockedNodeSprite: {fileID: 21300000, guid: 3a70e1ae70e72314087769b6a25bddb1, type: 3}
   currentNodeSprite: {fileID: 21300000, guid: 54853f235f70b3e439002832adee7a30, type: 3}
   completedNodeSprite: {fileID: 21300000, guid: 4010dfbfdc4819b4ca6efb700c59d327, type: 3}

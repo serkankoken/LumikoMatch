@@ -11,6 +11,9 @@ namespace CharacterMatch3.Board
         private const float NormalPieceInset = 8f;
         private const float BearSpecialInset = -18f;
         private const float OtherSpecialInset = 2f;
+        private static readonly Color InactiveCellColor = new Color(0f, 0f, 0f, 0.06f);
+        private static readonly Color ActiveCellColor = new Color(1f, 1f, 1f, 0.16f);
+        private static readonly Color SelectedCellColor = new Color(1f, 0.93f, 0.35f, 0.95f);
 
         private BoardView boardView;
         private Image background;
@@ -48,7 +51,7 @@ namespace CharacterMatch3.Board
             if (cell == null || !cell.Active)
             {
                 background.sprite = null;
-                background.color = new Color(0f, 0f, 0f, 0.08f);
+                background.color = InactiveCellColor;
                 pieceImage.enabled = false;
                 softCoverImage.enabled = false;
                 specialOverlayPrimary.enabled = false;
@@ -59,7 +62,7 @@ namespace CharacterMatch3.Board
             }
 
             background.sprite = null;
-            background.color = selected ? new Color(1f, 0.93f, 0.35f, 0.95f) : new Color(1f, 1f, 1f, 0.36f);
+            background.color = selected ? SelectedCellColor : ActiveCellColor;
             softCoverImage.enabled = cell.SoftCoverLayers > 0;
             specialOverlayPrimary.enabled = false;
             specialOverlaySecondary.enabled = false;
@@ -278,7 +281,7 @@ namespace CharacterMatch3.Board
                 background = gameObject.AddComponent<Image>();
             }
 
-            background.color = new Color(1f, 1f, 1f, 0.35f);
+            background.color = ActiveCellColor;
             background.raycastTarget = true;
 
             softCoverImage = UIFactory.CreateImage("SoftCover", transform, Color.clear);

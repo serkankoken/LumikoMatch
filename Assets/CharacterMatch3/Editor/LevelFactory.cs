@@ -66,11 +66,9 @@ namespace CharacterMatch3.Editor
             level.difficultyLabel = hardCheckpoint ? DifficultyLabel.Hard : normalCheckpoint ? DifficultyLabel.Normal : DifficultyLabel.Easy;
             level.backgroundThemeId = number switch
             {
-                <= 10 => "sunny-garden",
-                <= 20 => "paper-pond",
-                <= 30 => "lantern-lane",
-                <= 40 => "sky-steps",
-                _ => "chapter-finale"
+                <= 6 => "meadow",
+                <= 12 => "beach",
+                _ => "desert"
             };
 
             var width = number < 31 ? 7 : number < 41 ? 8 : 9;

@@ -124,23 +124,50 @@ namespace CharacterMatch3.Board
             }
         }
 
+        public void AddCells(CharacterType character, IEnumerable<BoardCoordinate> cells)
+        {
+            if (Runs.Count == 0 && Cells.Count == 0)
+            {
+                Character = character;
+            }
+
+            foreach (var cell in cells)
+            {
+                Cells.Add(cell);
+            }
+        }
+
         public void Merge(MatchGroup other)
         {
             foreach (var run in other.Runs)
             {
                 AddRun(run);
             }
+
+            AddCells(other.Character, other.Cells);
         }
     }
 
     public static class MatchFinder
     {
+        public const int MinimumConnectedMatchSize = 4;
+
+        private static readonly BoardCoordinate[] CardinalDirections =
+        {
+            new BoardCoordinate(1, 0),
+            new BoardCoordinate(-1, 0),
+            new BoardCoordinate(0, 1),
+            new BoardCoordinate(0, -1)
+        };
+
         public static List<MatchGroup> FindMatches(BoardModel model)
         {
             var runs = new List<MatchRun>();
             FindHorizontalRuns(model, runs);
             FindVerticalRuns(model, runs);
-            return MergeRuns(runs);
+            var groups = MergeRuns(runs);
+            FindConnectedGroups(model, groups);
+            return groups;
         }
 
         public static bool HasAnyMatch(BoardModel model)
@@ -243,6 +270,94 @@ namespace CharacterMatch3.Board
             }
 
             return groups;
+        }
+
+        private static void FindConnectedGroups(BoardModel model, List<MatchGroup> groups)
+        {
+            var visited = new HashSet<BoardCoordinate>();
+            foreach (var coordinate in model.ActiveCoordinates())
+            {
+                if (visited.Contains(coordinate))
+                {
+                    continue;
+                }
+
+                var piece = model.GetCell(coordinate)?.Piece;
+                if (piece == null || !piece.IsMatchable)
+                {
+                    continue;
+                }
+
+                var cells = CollectConnectedCells(model, coordinate, piece.Character, visited);
+                if (cells.Count >= MinimumConnectedMatchSize)
+                {
+                    MergeConnectedCells(groups, piece.Character, cells);
+                }
+            }
+        }
+
+        private static List<BoardCoordinate> CollectConnectedCells(
+            BoardModel model,
+            BoardCoordinate start,
+            CharacterType character,
+            HashSet<BoardCoordinate> visited)
+        {
+            var cells = new List<BoardCoordinate>();
+            var queue = new Queue<BoardCoordinate>();
+            visited.Add(start);
+            queue.Enqueue(start);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                cells.Add(current);
+
+                foreach (var direction in CardinalDirections)
+                {
+                    var next = new BoardCoordinate(current.x + direction.x, current.y + direction.y);
+                    if (visited.Contains(next))
+                    {
+                        continue;
+                    }
+
+                    var piece = model.GetCell(next)?.Piece;
+                    if (piece == null || !piece.IsMatchable || piece.Character != character)
+                    {
+                        continue;
+                    }
+
+                    visited.Add(next);
+                    queue.Enqueue(next);
+                }
+            }
+
+            return cells;
+        }
+
+        private static void MergeConnectedCells(
+            List<MatchGroup> groups,
+            CharacterType character,
+            List<BoardCoordinate> cells)
+        {
+            var overlappingGroups = groups
+                .Where(group => group.Character == character && cells.Any(cell => group.Cells.Contains(cell)))
+                .ToList();
+
+            if (overlappingGroups.Count == 0)
+            {
+                var group = new MatchGroup();
+                group.AddCells(character, cells);
+                groups.Add(group);
+                return;
+            }
+
+            var target = overlappingGroups[0];
+            target.AddCells(character, cells);
+            for (var i = 1; i < overlappingGroups.Count; i++)
+            {
+                target.Merge(overlappingGroups[i]);
+                groups.Remove(overlappingGroups[i]);
+            }
         }
     }
 }

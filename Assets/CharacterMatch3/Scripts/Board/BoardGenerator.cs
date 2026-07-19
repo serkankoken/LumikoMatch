@@ -6,6 +6,14 @@ namespace CharacterMatch3.Board
 {
     public sealed class BoardGenerator
     {
+        private static readonly BoardCoordinate[] CardinalDirections =
+        {
+            new BoardCoordinate(1, 0),
+            new BoardCoordinate(-1, 0),
+            new BoardCoordinate(0, 1),
+            new BoardCoordinate(0, -1)
+        };
+
         private readonly LevelDefinition level;
         private readonly System.Random random;
 
@@ -163,7 +171,8 @@ namespace CharacterMatch3.Board
         private static bool WouldCreateImmediateMatch(BoardModel model, BoardCoordinate coordinate, CharacterType character)
         {
             return CountSame(model, coordinate, character, -1, 0) + CountSame(model, coordinate, character, 1, 0) >= 2 ||
-                   CountSame(model, coordinate, character, 0, -1) + CountSame(model, coordinate, character, 0, 1) >= 2;
+                   CountSame(model, coordinate, character, 0, -1) + CountSame(model, coordinate, character, 0, 1) >= 2 ||
+                   WouldCreateConnectedMatch(model, coordinate, character);
         }
 
         private static int CountSame(BoardModel model, BoardCoordinate coordinate, CharacterType character, int dx, int dy)
@@ -182,6 +191,73 @@ namespace CharacterMatch3.Board
                 count++;
                 x += dx;
                 y += dy;
+            }
+
+            return count;
+        }
+
+        private static bool WouldCreateConnectedMatch(BoardModel model, BoardCoordinate coordinate, CharacterType character)
+        {
+            var connectedCount = 1;
+            var visited = new HashSet<BoardCoordinate>();
+
+            foreach (var direction in CardinalDirections)
+            {
+                var neighbor = new BoardCoordinate(coordinate.x + direction.x, coordinate.y + direction.y);
+                if (visited.Contains(neighbor))
+                {
+                    continue;
+                }
+
+                var piece = model.GetCell(neighbor)?.Piece;
+                if (piece == null || !piece.IsMatchable || piece.Character != character)
+                {
+                    continue;
+                }
+
+                connectedCount += CountConnectedSame(model, neighbor, character, visited);
+                if (connectedCount >= MatchFinder.MinimumConnectedMatchSize)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int CountConnectedSame(
+            BoardModel model,
+            BoardCoordinate start,
+            CharacterType character,
+            HashSet<BoardCoordinate> visited)
+        {
+            var count = 0;
+            var queue = new Queue<BoardCoordinate>();
+            visited.Add(start);
+            queue.Enqueue(start);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                count++;
+
+                foreach (var direction in CardinalDirections)
+                {
+                    var next = new BoardCoordinate(current.x + direction.x, current.y + direction.y);
+                    if (visited.Contains(next))
+                    {
+                        continue;
+                    }
+
+                    var piece = model.GetCell(next)?.Piece;
+                    if (piece == null || !piece.IsMatchable || piece.Character != character)
+                    {
+                        continue;
+                    }
+
+                    visited.Add(next);
+                    queue.Enqueue(next);
+                }
             }
 
             return count;

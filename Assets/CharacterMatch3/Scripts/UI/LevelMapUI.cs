@@ -37,6 +37,7 @@ namespace CharacterMatch3.UI
         [SerializeField] private Sprite mapMeadowSprite;
         [SerializeField] private Sprite mapBeachSprite;
         [SerializeField] private Sprite mapDesertSprite;
+        [SerializeField] private bool useSingleBackgroundSprite = true;
         [SerializeField] private Sprite unlockedNodeSprite;
         [SerializeField] private Sprite currentNodeSprite;
         [SerializeField] private Sprite completedNodeSprite;
@@ -68,6 +69,7 @@ namespace CharacterMatch3.UI
         private float[] segmentWidthsByBottom;
         private float mapContentHeight;
         private float mapSegmentOverlapHeight;
+        private bool usesSingleBackgroundLayout;
         private bool usesContinuousSliceLayout;
         private bool progressionPlaying;
 
@@ -188,10 +190,7 @@ namespace CharacterMatch3.UI
         {
             for (var segmentFromBottom = mapSectionCount - 1; segmentFromBottom >= 0; segmentFromBottom--)
             {
-                var tile = UIFactory.CreateImage($"MapSegment_{GetSegmentThemeName(segmentFromBottom)}_{segmentFromBottom:00}", contentRoot, Color.white);
-                tile.sprite = GetSegmentSprite(segmentFromBottom);
-                tile.preserveAspect = true;
-                tile.raycastTarget = false;
+                var tile = CreateMapBackgroundTile($"MapSegment_{GetSegmentThemeName(segmentFromBottom)}_{segmentFromBottom:00}", segmentFromBottom);
                 var rect = tile.rectTransform;
                 rect.anchorMin = new Vector2(0.5f, 1f);
                 rect.anchorMax = new Vector2(0.5f, 1f);
@@ -202,18 +201,44 @@ namespace CharacterMatch3.UI
             }
         }
 
+        private Graphic CreateMapBackgroundTile(string name, int segmentFromBottom)
+        {
+            if (usesSingleBackgroundLayout)
+            {
+                var tileObject = new GameObject(name, typeof(RectTransform), typeof(RawImage));
+                tileObject.transform.SetParent(contentRoot, false);
+                var rawImage = tileObject.GetComponent<RawImage>();
+                rawImage.texture = backgroundSprite.texture;
+                rawImage.uvRect = GetSingleBackgroundUvRect(segmentFromBottom);
+                rawImage.color = Color.white;
+                rawImage.raycastTarget = false;
+                return rawImage;
+            }
+
+            var tile = UIFactory.CreateImage(name, contentRoot, Color.white);
+            tile.sprite = GetSegmentSprite(segmentFromBottom);
+            tile.preserveAspect = true;
+            tile.raycastTarget = false;
+            return tile;
+        }
+
         private void CalculateSegmentLayout()
         {
             segmentHeightsByBottom = new float[mapSectionCount];
             segmentTopYByBottom = new float[mapSectionCount];
             segmentWidthsByBottom = new float[mapSectionCount];
             ClampSliceInspectorValues();
-            usesContinuousSliceLayout = HasContinuousSliceSprites();
+            usesSingleBackgroundLayout = HasSingleBackgroundSprite();
+            usesContinuousSliceLayout = !usesSingleBackgroundLayout && HasContinuousSliceSprites();
 
             Canvas.ForceUpdateCanvases();
             var viewportWidth = GetMapViewportWidth();
-            var continuousScale = usesContinuousSliceLayout ? GetContinuousMapScale(viewportWidth) : 0f;
-            mapSegmentOverlapHeight = GetSegmentOverlapHeight(viewportWidth, continuousScale);
+            var mapArtScale = usesSingleBackgroundLayout
+                ? GetSingleBackgroundScale(viewportWidth)
+                : usesContinuousSliceLayout
+                    ? GetContinuousMapScale(viewportWidth)
+                    : 0f;
+            mapSegmentOverlapHeight = GetSegmentOverlapHeight(viewportWidth, mapArtScale);
 
             var topOffset = 0f;
             for (var segmentFromBottom = mapSectionCount - 1; segmentFromBottom >= 0; segmentFromBottom--)
@@ -222,10 +247,16 @@ namespace CharacterMatch3.UI
                 var width = viewportWidth;
                 var height = FallbackMapSegmentHeight;
 
-                if (sprite != null && sprite.rect.width > 1f && sprite.rect.height > 1f)
+                if (usesSingleBackgroundLayout)
+                {
+                    var texture = backgroundSprite.texture;
+                    width = Mathf.Max(viewportWidth, texture.width * mapArtScale);
+                    height = texture.height * GetSingleBackgroundUvRect(segmentFromBottom).height * mapArtScale;
+                }
+                else if (sprite != null && sprite.rect.width > 1f && sprite.rect.height > 1f)
                 {
                     var scale = usesContinuousSliceLayout
-                        ? continuousScale
+                        ? mapArtScale
                         : Mathf.Max(viewportWidth / sprite.rect.width, MinimumMapSegmentHeight / sprite.rect.height);
                     width = Mathf.Max(viewportWidth, sprite.rect.width * scale);
                     height = sprite.rect.height * scale;
@@ -263,6 +294,20 @@ namespace CharacterMatch3.UI
                    mapBeachSprite.texture == mapDesertSprite.texture;
         }
 
+        private bool HasSingleBackgroundSprite()
+        {
+            return useSingleBackgroundSprite &&
+                   backgroundSprite != null &&
+                   backgroundSprite.texture != null &&
+                   backgroundSprite.texture.width > 0 &&
+                   backgroundSprite.texture.height > 0;
+        }
+
+        private float GetSingleBackgroundScale(float viewportWidth)
+        {
+            return viewportWidth / backgroundSprite.texture.width * mapArtZoom;
+        }
+
         private float GetContinuousMapScale(float viewportWidth)
         {
             var sprite = mapMeadowSprite != null ? mapMeadowSprite : mapBeachSprite != null ? mapBeachSprite : mapDesertSprite;
@@ -277,6 +322,11 @@ namespace CharacterMatch3.UI
         private float GetSegmentOverlapHeight(float viewportWidth, float continuousScale)
         {
             var overlapPercent = Mathf.Clamp(mapSliceOverlapPercent, 0.04f, 0.08f);
+            if (usesSingleBackgroundLayout)
+            {
+                return backgroundSprite.texture.height * overlapPercent * continuousScale;
+            }
+
             if (usesContinuousSliceLayout)
             {
                 var sprite = mapMeadowSprite != null ? mapMeadowSprite : mapBeachSprite != null ? mapBeachSprite : mapDesertSprite;
@@ -333,6 +383,23 @@ namespace CharacterMatch3.UI
 
             var sectionFromTop = Mathf.Max(0, mapSectionCount - 1 - segmentFromBottom);
             return -sectionFromTop * (FallbackMapSegmentHeight - FallbackMapSegmentHeight * Mathf.Clamp(mapSliceOverlapPercent, 0.04f, 0.08f));
+        }
+
+        private Rect GetSingleBackgroundUvRect(int segmentFromBottom)
+        {
+            var halfOverlap = Mathf.Clamp(mapSliceOverlapPercent, 0.04f, 0.08f) * 0.5f;
+            var meadowEnd = Mathf.Clamp01(meadowSlicePercent + halfOverlap);
+            var beachStart = Mathf.Clamp01(meadowSlicePercent - halfOverlap);
+            var beachEnd = Mathf.Clamp01(meadowSlicePercent + beachSlicePercent + halfOverlap);
+            var desertStart = Mathf.Clamp01(meadowSlicePercent + beachSlicePercent - halfOverlap);
+
+            return GetSegmentThemeIndex(segmentFromBottom) switch
+            {
+                0 => new Rect(0f, 0f, 1f, Mathf.Max(0.01f, meadowEnd)),
+                1 => new Rect(0f, beachStart, 1f, Mathf.Max(0.01f, beachEnd - beachStart)),
+                2 => new Rect(0f, desertStart, 1f, Mathf.Max(0.01f, 1f - desertStart)),
+                _ => new Rect(0f, 0f, 1f, 1f)
+            };
         }
 
         private Sprite GetSegmentSprite(int segmentFromBottom)

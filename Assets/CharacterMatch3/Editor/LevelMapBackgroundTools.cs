@@ -12,14 +12,21 @@ namespace CharacterMatch3.Editor
 {
     public static class LevelMapBackgroundTools
     {
-        private const string PrimaryMapsFolder = "Assets/Char/UI/Maps";
+        private const string PrimaryUiFolder = "Assets/Char/UI";
+        private const string FlatUiFolder = "Assets/Assets_Char_UI";
+        private const string LiteralUiFolder = "Assets_Char_UI";
+        private const string PrimaryMapsFolder = PrimaryUiFolder + "/Maps";
         private const string FlatMapsFolder = "Assets/Assets_Char_UI_Maps";
         private const string LiteralMapsFolder = "Assets_Char_UI_Maps";
+        private const string BackgroundFileName = "BG.png";
         private const string ContinuousMapFileName = "Map_Continuous_01_15.png";
         private const string LevelMapScenePath = CharacterMatch3Constants.RootPath + "/Scenes/LevelMap.unity";
         private const float DefaultMeadowPercent = 0.4f;
         private const float DefaultBeachPercent = 0.27f;
         private const float DefaultOverlapPercent = 0.06f;
+
+        private static readonly MapAssetDefinition BackgroundAsset =
+            new MapAssetDefinition(BackgroundFileName, "backgroundSprite", "Primary BG map");
 
         private static readonly MapSliceDefinition[] Slices =
         {
@@ -159,7 +166,7 @@ namespace CharacterMatch3.Editor
             AssetDatabase.Refresh();
 
             report.Add("Runtime segment order remains bottom-to-top: Meadow, Beach, Desert, then Desert repeats for later levels.");
-            report.Add("Level ranges are Meadow 1-6, Beach 7-12, Desert 13+.");
+            report.Add("Level ranges are Meadow 1-6, Beach 7-12, Desert 13-18, then Desert repeats for later levels.");
             report.Add("Fixed HUD, scrolling, save, node, and scene logic were not rebuilt.");
             Debug.Log("Character Match-3 continuous map slice build complete.\n" + string.Join("\n", report));
         }
@@ -179,22 +186,30 @@ namespace CharacterMatch3.Editor
 
             var folder = ResolveMapsFolder();
             var report = new List<string>();
-            var segmentSprites = LoadSeparateMapSprites(folder, report);
-            if (segmentSprites.Count > 0)
+            var backgroundSprites = LoadPrimaryBackgroundSprite(report);
+            if (backgroundSprites.Count > 0)
             {
-                AssignSpritesToMap(map, segmentSprites);
+                AssignSpritesToMap(map, backgroundSprites);
             }
             else
             {
-                var path = $"{folder}/{ContinuousMapFileName}";
-                if (!File.Exists(path))
+                var segmentSprites = LoadSeparateMapSprites(folder, report);
+                if (segmentSprites.Count > 0)
                 {
-                    Debug.LogWarning($"Character Match-3 map backgrounds missing: expected Map_Meadow.png, Map_Beach.png, Map_Desert.png, or {ContinuousMapFileName} in {folder}. Keeping existing map background placeholders.");
+                    AssignSpritesToMap(map, segmentSprites);
                 }
                 else
                 {
-                    ConfigureAndSliceContinuousMap(path, ReadSliceSettings(map), report);
-                    AssignSpritesToMap(map, LoadContinuousSliceSprites(path, report));
+                    var path = $"{folder}/{ContinuousMapFileName}";
+                    if (!File.Exists(path))
+                    {
+                        Debug.LogWarning($"Character Match-3 map backgrounds missing: expected {BackgroundFileName} in {ResolveUiFolder()}, or Map_Meadow.png, Map_Beach.png, Map_Desert.png, or {ContinuousMapFileName} in {folder}. Keeping existing map background placeholders.");
+                    }
+                    else
+                    {
+                        ConfigureAndSliceContinuousMap(path, ReadSliceSettings(map), report);
+                        AssignSpritesToMap(map, LoadContinuousSliceSprites(path, report));
+                    }
                 }
             }
 
@@ -213,7 +228,11 @@ namespace CharacterMatch3.Editor
                 return;
             }
 
-            var sprites = LoadSeparateMapSprites(folder, report);
+            var sprites = LoadPrimaryBackgroundSprite(report);
+            if (sprites.Count == 0)
+            {
+                sprites = LoadSeparateMapSprites(folder, report);
+            }
             var nodeSprites = LoadNodeSprites(folder, report);
             var levelMapScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(LevelMapScenePath);
             Scene scene = default;
@@ -257,9 +276,34 @@ namespace CharacterMatch3.Editor
             AssetDatabase.Refresh();
 
             report.Add("Runtime segment order remains bottom-to-top: Meadow, Beach, Desert, then Desert repeats for later levels.");
-            report.Add("Level ranges are Meadow 1-6, Beach 7-12, Desert 13+.");
+            report.Add("Level ranges are Meadow 1-6, Beach 7-12, Desert 13-18, then Desert repeats for later levels.");
             report.Add("BottomBar remains disabled by LevelMapUI.");
             Debug.Log("Character Match-3 map background refresh complete.\n" + string.Join("\n", report));
+        }
+
+        private static string ResolveUiFolder()
+        {
+            if (AssetDatabase.IsValidFolder(PrimaryUiFolder))
+            {
+                return PrimaryUiFolder;
+            }
+
+            if (AssetDatabase.IsValidFolder(FlatUiFolder))
+            {
+                return FlatUiFolder;
+            }
+
+            if (AssetDatabase.IsValidFolder(LiteralUiFolder))
+            {
+                return LiteralUiFolder;
+            }
+
+            if (Directory.Exists(LiteralUiFolder))
+            {
+                Debug.LogWarning($"Character Match-3 found {LiteralUiFolder}, but Unity can only assign sprites from imported asset folders. Expected {PrimaryUiFolder} or {FlatUiFolder}.");
+            }
+
+            return PrimaryUiFolder;
         }
 
         private static string ResolveMapsFolder()
@@ -311,6 +355,30 @@ namespace CharacterMatch3.Editor
         {
             var property = serialized.FindProperty(propertyName);
             return property != null ? Mathf.Clamp(property.floatValue, min, max) : fallback;
+        }
+
+        private static Dictionary<string, Sprite> LoadPrimaryBackgroundSprite(List<string> report)
+        {
+            var sprites = new Dictionary<string, Sprite>();
+            var folder = ResolveUiFolder();
+            var path = $"{folder}/{BackgroundFileName}";
+            if (!File.Exists(path))
+            {
+                report.Add($"WARNING: Missing {BackgroundFileName} in {folder}. Falling back to separate map backgrounds.");
+                return sprites;
+            }
+
+            ConfigureSingleMapTexture(path, report);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null)
+            {
+                report.Add($"WARNING: Could not load Sprite for {BackgroundFileName} from {folder}. Falling back to separate map backgrounds.");
+                return sprites;
+            }
+
+            sprites[BackgroundAsset.PropertyName] = sprite;
+            report.Add($"Assigned {BackgroundAsset.FileName} to {BackgroundAsset.DisplayName} background.");
+            return sprites;
         }
 
         private static Dictionary<string, Sprite> LoadSeparateMapSprites(string folder, List<string> report)
@@ -610,9 +678,23 @@ namespace CharacterMatch3.Editor
             foreach (var spriteReference in sprites)
             {
                 changed |= SetObjectReference(serialized, spriteReference.Key, spriteReference.Value);
+                if (spriteReference.Key == "backgroundSprite")
+                {
+                    var useSingleBackgroundProperty = serialized.FindProperty("useSingleBackgroundSprite");
+                    if (useSingleBackgroundProperty != null && !useSingleBackgroundProperty.boolValue)
+                    {
+                        useSingleBackgroundProperty.boolValue = true;
+                        changed = true;
+                    }
+                }
+
                 if (spriteReference.Key == "mapMeadowSprite")
                 {
-                    changed |= SetObjectReference(serialized, "backgroundSprite", spriteReference.Value);
+                    var backgroundProperty = serialized.FindProperty("backgroundSprite");
+                    if (backgroundProperty != null && backgroundProperty.objectReferenceValue == null)
+                    {
+                        changed |= SetObjectReference(serialized, "backgroundSprite", spriteReference.Value);
+                    }
                 }
             }
 

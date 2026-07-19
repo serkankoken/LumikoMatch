@@ -81,7 +81,7 @@ function New-Level($number) {
         number = $number
         name = "Level {0:000}" -f $number
         difficulty = if ($hard) { 2 } elseif ($normal) { 1 } else { 0 }
-        theme = if ($number -le 10) { "sunny-garden" } elseif ($number -le 20) { "paper-pond" } elseif ($number -le 30) { "lantern-lane" } elseif ($number -le 40) { "sky-steps" } else { "chapter-finale" }
+        theme = if ($number -le 6) { "meadow" } elseif ($number -le 12) { "beach" } else { "desert" }
         width = $width
         height = $height
         active = $active
