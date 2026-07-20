@@ -15,19 +15,30 @@ namespace CharacterMatch3.Editor
                 return;
             }
 
+            var importer = (TextureImporter)assetImporter;
+            if (normalized.StartsWith("Assets/Char/UI/LevelsBG/", StringComparison.OrdinalIgnoreCase))
+            {
+                ConfigureSprite(importer, 2048, TextureImporterCompression.Compressed);
+                return;
+            }
+
             if (normalized.StartsWith("Assets/Char/UI/Maps/", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            var importer = (TextureImporter)assetImporter;
+            ConfigureSprite(importer, 1024, TextureImporterCompression.CompressedHQ);
+        }
+
+        private static void ConfigureSprite(TextureImporter importer, int maxTextureSize, TextureImporterCompression compression)
+        {
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.alphaIsTransparency = true;
             importer.filterMode = FilterMode.Bilinear;
             importer.wrapMode = TextureWrapMode.Clamp;
-            importer.textureCompression = TextureImporterCompression.CompressedHQ;
-            importer.maxTextureSize = 1024;
+            importer.textureCompression = compression;
+            importer.maxTextureSize = maxTextureSize;
             importer.mipmapEnabled = false;
         }
     }

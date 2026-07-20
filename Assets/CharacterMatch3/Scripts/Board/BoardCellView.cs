@@ -11,6 +11,7 @@ namespace CharacterMatch3.Board
         private const float NormalPieceInset = 8f;
         private const float BearSpecialInset = -18f;
         private const float OtherSpecialInset = 2f;
+        private const float GridSpriteOverscan = 38f;
         private static readonly Color InactiveCellColor = new Color(0f, 0f, 0f, 0.06f);
         private static readonly Color ActiveCellColor = new Color(1f, 1f, 1f, 0.16f);
         private static readonly Color SelectedCellColor = new Color(1f, 0.93f, 0.35f, 0.95f);
@@ -19,6 +20,7 @@ namespace CharacterMatch3.Board
 
         private BoardView boardView;
         private Image background;
+        private Image gridImage;
         private Image pieceImage;
         private Image softCoverImage;
         private Image specialOverlayPrimary;
@@ -53,7 +55,10 @@ namespace CharacterMatch3.Board
             if (cell == null || !cell.Active)
             {
                 background.sprite = null;
+                background.type = Image.Type.Simple;
                 background.color = InactiveCellColor;
+                gridImage.enabled = false;
+                gridImage.sprite = null;
                 pieceImage.enabled = false;
                 softCoverImage.enabled = false;
                 softCoverImage.sprite = null;
@@ -64,8 +69,16 @@ namespace CharacterMatch3.Board
                 return;
             }
 
+            var gridSprite = catalog != null ? catalog.GridCellSprite : null;
             background.sprite = null;
-            background.color = selected ? SelectedCellColor : ActiveCellColor;
+            background.color = selected
+                ? SelectedCellColor
+                : gridSprite != null
+                    ? Color.clear
+                    : ActiveCellColor;
+            gridImage.enabled = gridSprite != null;
+            gridImage.sprite = gridSprite;
+            gridImage.color = Color.white;
             softCoverImage.enabled = cell.SoftCoverLayers > 0;
             specialOverlayPrimary.enabled = false;
             specialOverlaySecondary.enabled = false;
@@ -292,6 +305,17 @@ namespace CharacterMatch3.Board
 
             background.color = ActiveCellColor;
             background.raycastTarget = true;
+            background.preserveAspect = false;
+
+            gridImage = UIFactory.CreateImage("Grid", transform, Color.white);
+            gridImage.preserveAspect = false;
+            gridImage.raycastTarget = false;
+            UIFactory.SetAnchored(
+                gridImage.rectTransform,
+                Vector2.zero,
+                Vector2.one,
+                new Vector2(-GridSpriteOverscan, -GridSpriteOverscan),
+                new Vector2(GridSpriteOverscan, GridSpriteOverscan));
 
             softCoverImage = UIFactory.CreateImage("SoftCover", transform, Color.clear);
             softCoverImage.preserveAspect = false;

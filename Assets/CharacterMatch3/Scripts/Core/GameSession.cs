@@ -75,6 +75,7 @@ namespace CharacterMatch3.Core
             gameplayUI.BindGoalManager(goalManager);
             gameplayUI.UpdateScore(scoreManager.Score);
             gameplayUI.UpdateMoves(moveManager.MovesRemaining);
+            gameplayUI.UpdateStars(level, moveManager.MovesRemaining);
             gameplayUI.HideAllPanels();
             gameplayUI.BoardView.SetInputSettings(inputSettings);
 
@@ -149,6 +150,7 @@ namespace CharacterMatch3.Core
             if (moveManager.TryConsumeMove())
             {
                 gameplayUI.UpdateMoves(moveManager.MovesRemaining);
+                gameplayUI.UpdateStars(level, moveManager.MovesRemaining);
                 tutorialManager.MarkCurrentTutorialComplete();
             }
         }
@@ -166,7 +168,6 @@ namespace CharacterMatch3.Core
             scoreManager.AddScore(amount);
             goalManager.RecordScore(scoreManager.Score);
             gameplayUI.UpdateScore(scoreManager.Score);
-            gameplayUI.UpdateStars(level, scoreManager.Score);
         }
 
         private void CheckEndState()
@@ -190,6 +191,8 @@ namespace CharacterMatch3.Core
         {
             gameEnded = true;
             boardController.SetInputLocked(true);
+            var movesRemainingAtCompletion = moveManager.MovesRemaining;
+            var stars = StarRating.GetStarsForRemainingMoves(level, movesRemainingAtCompletion);
             var remaining = moveManager.ConsumeAllRemaining();
             if (scoringConfig != null && remaining > 0)
             {
@@ -199,11 +202,11 @@ namespace CharacterMatch3.Core
 
             gameplayUI.UpdateMoves(moveManager.MovesRemaining);
             gameplayUI.UpdateScore(scoreManager.Score);
-            gameplayUI.UpdateStars(level, scoreManager.Score);
+            gameplayUI.UpdateStars(stars);
             yield return new WaitForSeconds(0.35f);
 
-            var stars = Mathf.Max(1, scoreManager.GetStars(level));
             SaveManager.RecordLevelWin(level.levelNumber, scoreManager.Score, stars);
+            GameState.QueueMapStarReveal(level.levelNumber, SaveManager.GetStars(level.levelNumber));
             QueueMapProgressionToNextLevel();
             AudioManager.Instance?.Play(AudioManager.Instance.win);
             gameplayUI.ShowWinPanel(scoreManager.Score, stars);

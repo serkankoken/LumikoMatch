@@ -18,8 +18,12 @@ namespace CharacterMatch3.Editor
             { "bear", CharacterType.Bear }
         };
 
+        private const string GridCellSpritePath = "Assets/Char/UI/Grid/Grid.png";
         private const string SoftCoverSpritePath = "Assets/Char/UI/Grid/softcovernormal-Photoroom.png";
         private const string SoftCoverBrokenSpritePath = "Assets/Char/UI/Grid/softcoverbroken-Photoroom.png";
+        private const string MeadowGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Orman.png";
+        private const string BeachGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Sahil.png";
+        private const string DesertGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/\u00c7\u00f6l.png";
 
         [MenuItem("Character Match-3/Create Character Catalog")]
         public static CharacterCatalog CreateOrUpdateCatalogMenu()
@@ -53,6 +57,7 @@ namespace CharacterMatch3.Editor
 
             AssignSpecialSprites(catalog);
             AssignBoardSprites(catalog);
+            AssignGameplayBackgroundSprites(catalog);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -132,9 +137,18 @@ namespace CharacterMatch3.Editor
 
         private static void AssignBoardSprites(CharacterCatalog catalog)
         {
+            var grid = AssetDatabase.LoadAssetAtPath<Sprite>(GridCellSpritePath);
             var softCover = AssetDatabase.LoadAssetAtPath<Sprite>(SoftCoverSpritePath);
             var softCoverBroken = AssetDatabase.LoadAssetAtPath<Sprite>(SoftCoverBrokenSpritePath);
-            catalog.SetSoftCoverSprites(softCover, softCoverBroken);
+            catalog.SetBoardSprites(grid, softCover, softCoverBroken);
+        }
+
+        private static void AssignGameplayBackgroundSprites(CharacterCatalog catalog)
+        {
+            var meadow = AssetDatabase.LoadAssetAtPath<Sprite>(MeadowGameplayBackgroundSpritePath);
+            var beach = AssetDatabase.LoadAssetAtPath<Sprite>(BeachGameplayBackgroundSpritePath);
+            var desert = AssetDatabase.LoadAssetAtPath<Sprite>(DesertGameplayBackgroundSpritePath);
+            catalog.SetGameplayBackgroundSprites(meadow, beach, desert);
         }
 
         private static bool TryResolveCharacterFromFileName(string path, out CharacterType characterType)

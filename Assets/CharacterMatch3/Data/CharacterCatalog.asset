@@ -109,5 +109,9 @@ MonoBehaviour:
     kind: 3
     lineOrientation: 0
     sprite: {fileID: 21300000, guid: 8f1be0374d58a6a4ea923c3377884265, type: 3}
+  gridCellSprite: {fileID: 21300000, guid: 20cd020bab2eb9f4d9df64ad14b827b1, type: 3}
   softCoverSprite: {fileID: 21300000, guid: 134b2bc48d4c97f41964721fc5c711da, type: 3}
   softCoverBrokenSprite: {fileID: 21300000, guid: 9a89b3408766cad41b7e974b59044af5, type: 3}
+  meadowGameplayBackgroundSprite: {fileID: 21300000, guid: bff35e6b7ffecab459516318f2124c72, type: 3}
+  beachGameplayBackgroundSprite: {fileID: 21300000, guid: b7d0f49b86113934cb9e12f02ff48bc4, type: 3}
+  desertGameplayBackgroundSprite: {fileID: 21300000, guid: 30d6aa7a7a14b4c4a8ae901284e62ad0, type: 3}

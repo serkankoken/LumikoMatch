@@ -21,9 +21,9 @@ namespace CharacterMatch3.Editor
         private const string BackgroundFileName = "BG.png";
         private const string ContinuousMapFileName = "Map_Continuous_01_15.png";
         private const string LevelMapScenePath = CharacterMatch3Constants.RootPath + "/Scenes/LevelMap.unity";
-        private const float DefaultMeadowPercent = 0.4f;
-        private const float DefaultBeachPercent = 0.27f;
-        private const float DefaultOverlapPercent = 0.06f;
+        private const float DefaultMeadowPercent = 0.36f;
+        private const float DefaultBeachPercent = 0.32f;
+        private const float DefaultOverlapPercent = 0.05f;
 
         private static readonly MapAssetDefinition BackgroundAsset =
             new MapAssetDefinition(BackgroundFileName, "backgroundSprite", "Primary BG map");
@@ -166,7 +166,7 @@ namespace CharacterMatch3.Editor
             AssetDatabase.Refresh();
 
             report.Add("Runtime segment order remains bottom-to-top: Meadow, Beach, Desert, then Desert repeats for later levels.");
-            report.Add("Level ranges are Meadow 1-6, Beach 7-12, Desert 13-18, then Desert repeats for later levels.");
+            report.Add("Level ranges are Meadow 1-7, Beach 8-14, Desert 15-21, then Desert repeats for later levels.");
             report.Add("Fixed HUD, scrolling, save, node, and scene logic were not rebuilt.");
             Debug.Log("Character Match-3 continuous map slice build complete.\n" + string.Join("\n", report));
         }
@@ -276,7 +276,7 @@ namespace CharacterMatch3.Editor
             AssetDatabase.Refresh();
 
             report.Add("Runtime segment order remains bottom-to-top: Meadow, Beach, Desert, then Desert repeats for later levels.");
-            report.Add("Level ranges are Meadow 1-6, Beach 7-12, Desert 13-18, then Desert repeats for later levels.");
+            report.Add("Level ranges are Meadow 1-7, Beach 8-14, Desert 15-21, then Desert repeats for later levels.");
             report.Add("BottomBar remains disabled by LevelMapUI.");
             Debug.Log("Character Match-3 map background refresh complete.\n" + string.Join("\n", report));
         }

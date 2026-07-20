@@ -13,6 +13,7 @@ namespace CharacterMatch3.UI
         private CharacterCatalog catalog;
         private Canvas canvas;
         private RectTransform safeRoot;
+        private Image backgroundImage;
         private Text levelText;
         private Text movesText;
         private Text scoreText;
@@ -31,6 +32,7 @@ namespace CharacterMatch3.UI
             session = gameSession;
             catalog = characterCatalog;
             EnsureBuilt();
+            ApplyBackgroundTheme(gameSession != null ? gameSession.CurrentLevel : null);
         }
 
         public void BindGoalManager(GoalManager goalManager)
@@ -55,20 +57,32 @@ namespace CharacterMatch3.UI
             }
         }
 
-        public void UpdateStars(LevelDefinition level, int score)
+        public void UpdateStars(LevelDefinition level, int movesRemaining)
         {
             if (starText == null || level == null)
             {
                 return;
             }
 
-            var stars = score >= level.threeStarScore ? 3 : score >= level.twoStarScore ? 2 : score >= level.oneStarScore ? 1 : 0;
+            var stars = StarRating.GetStarsForRemainingMoves(level, movesRemaining);
+            UpdateStars(stars);
+        }
+
+        public void UpdateStars(int stars)
+        {
+            if (starText == null)
+            {
+                return;
+            }
+
+            stars = Mathf.Clamp(stars, 0, 3);
             starText.text = $"Stars {stars}/3";
         }
 
         public void ShowStartPanel(LevelDefinition level)
         {
             EnsureBuilt();
+            ApplyBackgroundTheme(level);
             HideAllPanels();
             levelText.text = $"Level {level.levelNumber}";
             var title = startPanel.transform.Find("Box/Title")?.GetComponent<Text>();
@@ -166,8 +180,13 @@ namespace CharacterMatch3.UI
             safeRoot.SetParent(canvas.transform, false);
             UIFactory.Stretch(safeRoot);
 
-            var background = UIFactory.CreatePanel("Background", safeRoot, new Color(0.25f, 0.71f, 0.83f));
-            var boardBand = UIFactory.CreatePanel("BoardBand", background.transform, new Color(0.07f, 0.29f, 0.36f, 0.24f));
+            backgroundImage = UIFactory.CreateImage("Background", safeRoot, GetFallbackBackgroundColor(null));
+            UIFactory.Stretch(backgroundImage.rectTransform);
+            backgroundImage.preserveAspect = false;
+            backgroundImage.raycastTarget = false;
+            ApplyBackgroundTheme(session != null ? session.CurrentLevel : null);
+
+            var boardBand = UIFactory.CreatePanel("BoardBand", backgroundImage.transform, new Color(0.07f, 0.29f, 0.36f, 0.24f));
             UIFactory.SetAnchored(boardBand.GetComponent<RectTransform>(), new Vector2(0f, 0.22f), new Vector2(1f, 0.78f), Vector2.zero, Vector2.zero);
 
             levelText = UIFactory.CreateText("LevelText", safeRoot, "Level", 34, TextAnchor.MiddleLeft, Color.white);
@@ -217,6 +236,33 @@ namespace CharacterMatch3.UI
             AddToggleButton(settingsPanel, "Music", SaveManager.Data.musicEnabled, enabled => session.SetMusicEnabled(enabled), 2);
             AddToggleButton(settingsPanel, "Haptics", SaveManager.Data.hapticsEnabled, enabled => session.SetHapticsEnabled(enabled), 3);
             HideAllPanels();
+        }
+
+        private void ApplyBackgroundTheme(LevelDefinition level)
+        {
+            if (backgroundImage == null)
+            {
+                return;
+            }
+
+            var sprite = catalog != null ? catalog.GetGameplayBackgroundSprite(level != null ? level.backgroundThemeId : null) : null;
+            backgroundImage.sprite = sprite;
+            backgroundImage.color = sprite != null ? Color.white : GetFallbackBackgroundColor(level != null ? level.backgroundThemeId : null);
+        }
+
+        private static Color GetFallbackBackgroundColor(string themeId)
+        {
+            if (string.Equals(themeId, "beach", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return new Color(0.25f, 0.71f, 0.83f);
+            }
+
+            if (string.Equals(themeId, "desert", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return new Color(0.88f, 0.64f, 0.32f);
+            }
+
+            return new Color(0.38f, 0.68f, 0.42f);
         }
 
         private GameObject CreateModalPanel(string name, string title, string primaryLabel, UnityEngine.Events.UnityAction primaryAction)

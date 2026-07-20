@@ -23,20 +23,5 @@ namespace CharacterMatch3.Core
             Score += amount;
             ScoreChanged?.Invoke(Score);
         }
-
-        public int GetStars(LevelDefinition level)
-        {
-            if (Score >= level.threeStarScore)
-            {
-                return 3;
-            }
-
-            if (Score >= level.twoStarScore)
-            {
-                return 2;
-            }
-
-            return Score >= level.oneStarScore ? 1 : 0;
-        }
     }
 }

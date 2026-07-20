@@ -66,8 +66,8 @@ namespace CharacterMatch3.Editor
             level.difficultyLabel = hardCheckpoint ? DifficultyLabel.Hard : normalCheckpoint ? DifficultyLabel.Normal : DifficultyLabel.Easy;
             level.backgroundThemeId = number switch
             {
-                <= 6 => "meadow",
-                <= 12 => "beach",
+                <= 7 => "meadow",
+                <= 14 => "beach",
                 _ => "desert"
             };
 

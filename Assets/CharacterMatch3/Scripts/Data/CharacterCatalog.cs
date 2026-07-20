@@ -26,11 +26,16 @@ namespace CharacterMatch3
     {
         [SerializeField] private List<CharacterSpriteEntry> entries = new List<CharacterSpriteEntry>();
         [SerializeField] private List<CharacterSpecialSpriteEntry> specialEntries = new List<CharacterSpecialSpriteEntry>();
+        [SerializeField] private Sprite gridCellSprite;
         [SerializeField] private Sprite softCoverSprite;
         [SerializeField] private Sprite softCoverBrokenSprite;
+        [SerializeField] private Sprite meadowGameplayBackgroundSprite;
+        [SerializeField] private Sprite beachGameplayBackgroundSprite;
+        [SerializeField] private Sprite desertGameplayBackgroundSprite;
 
         public IReadOnlyList<CharacterSpriteEntry> Entries => entries;
         public IReadOnlyList<CharacterSpecialSpriteEntry> SpecialEntries => specialEntries;
+        public Sprite GridCellSprite => gridCellSprite;
         public Sprite SoftCoverSprite => softCoverSprite;
         public Sprite SoftCoverBrokenSprite => softCoverBrokenSprite;
 
@@ -140,10 +145,42 @@ namespace CharacterMatch3
             });
         }
 
-        public void SetSoftCoverSprites(Sprite normalSprite, Sprite brokenSprite)
+        public void SetBoardSprites(Sprite gridSprite, Sprite normalSprite, Sprite brokenSprite)
         {
+            gridCellSprite = gridSprite;
             softCoverSprite = normalSprite;
             softCoverBrokenSprite = brokenSprite;
+        }
+
+        public void SetGameplayBackgroundSprites(Sprite meadowSprite, Sprite beachSprite, Sprite desertSprite)
+        {
+            meadowGameplayBackgroundSprite = meadowSprite;
+            beachGameplayBackgroundSprite = beachSprite;
+            desertGameplayBackgroundSprite = desertSprite;
+        }
+
+        public Sprite GetGameplayBackgroundSprite(string themeId)
+        {
+            if (string.Equals(themeId, "beach", StringComparison.OrdinalIgnoreCase))
+            {
+                return beachGameplayBackgroundSprite != null ? beachGameplayBackgroundSprite : meadowGameplayBackgroundSprite;
+            }
+
+            if (string.Equals(themeId, "desert", StringComparison.OrdinalIgnoreCase))
+            {
+                if (desertGameplayBackgroundSprite != null)
+                {
+                    return desertGameplayBackgroundSprite;
+                }
+
+                return beachGameplayBackgroundSprite != null ? beachGameplayBackgroundSprite : meadowGameplayBackgroundSprite;
+            }
+
+            return meadowGameplayBackgroundSprite != null
+                ? meadowGameplayBackgroundSprite
+                : beachGameplayBackgroundSprite != null
+                    ? beachGameplayBackgroundSprite
+                    : desertGameplayBackgroundSprite;
         }
 
         public Color GetFallbackColor(CharacterType characterType)

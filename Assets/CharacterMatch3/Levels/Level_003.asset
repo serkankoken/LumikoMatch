@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 3
   displayName: 'Level 003'
   difficultyLabel: 0
-  backgroundThemeId: 'sunny-garden'
+  backgroundThemeId: 'meadow'
   boardWidth: 7
   boardHeight: 7
   activeCells:
