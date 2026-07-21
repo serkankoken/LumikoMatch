@@ -102,6 +102,7 @@ namespace CharacterMatch3.UI
         private RectTransform contentRoot;
         private ScrollRect scrollRect;
         private Image playerMarker;
+        private RectTransform playerMarkerRect;
         private Text progressLabel;
         private RectTransform ambientSparkleRoot;
         private int maxLevelNumber;
@@ -114,6 +115,7 @@ namespace CharacterMatch3.UI
         private float mapSegmentOverlapHeight;
         private bool usesSingleBackgroundLayout;
         private bool usesContinuousSliceLayout;
+        private bool usesSceneEditableMap;
         private bool progressionPlaying;
 
         private sealed class LevelNodeView
@@ -158,6 +160,7 @@ namespace CharacterMatch3.UI
 
             maxLevelNumber = CharacterMatch3Constants.LastLevel;
             mapSectionCount = Mathf.Max(1, Mathf.CeilToInt(maxLevelNumber / (float)LevelsPerMapSegment));
+            var usingSceneEditableMap = false;
             if (!TryUseSceneEditableShell())
             {
                 canvas = UIFactory.CreateCanvas("LevelMapCanvas");
@@ -165,26 +168,42 @@ namespace CharacterMatch3.UI
                 safeRoot.SetParent(canvas.transform, false);
                 UIFactory.Stretch(safeRoot);
             }
-
-            if (sceneMapPreviewRoot != null)
+            else
             {
-                sceneMapPreviewRoot.gameObject.SetActive(false);
+                usingSceneEditableMap = TryUseSceneEditableMapViewport();
+            }
+            usesSceneEditableMap = usingSceneEditableMap;
+
+            if (usingSceneEditableMap)
+            {
+                BindSceneEditableMapNodes();
+                BindSceneEditablePlayerMarker();
+            }
+            else
+            {
+                UIFactory.CreatePanel("FallbackSky", safeRoot, new Color(0.36f, 0.76f, 0.96f));
+                CreateScrollView(safeRoot);
+                CalculateSegmentLayout();
+                CreateMapBackgroundTiles();
+                CreateLevelNodes();
+                CreatePlayerMarker();
+                CreateAmbientSparkles(safeRoot);
             }
 
-            UIFactory.CreatePanel("FallbackSky", safeRoot, new Color(0.36f, 0.76f, 0.96f));
-            CreateScrollView(safeRoot);
-            CalculateSegmentLayout();
-            CreateMapBackgroundTiles();
-            CreateLevelNodes();
-            CreatePlayerMarker();
-            CreateAmbientSparkles(safeRoot);
             CreateTopBar(safeRoot);
             if (showBottomBar)
             {
                 CreateBottomBar(safeRoot);
             }
-            RefreshNodeStates();
-            SnapScrollToLevel(GetInitialFocusLevel());
+            if (usingSceneEditableMap)
+            {
+                RefreshSceneEditableMapButtons();
+            }
+            else
+            {
+                RefreshNodeStates();
+                SnapScrollToLevel(GetInitialFocusLevel());
+            }
         }
 
         private void CreateTopBar(RectTransform safeRoot)
@@ -281,6 +300,11 @@ namespace CharacterMatch3.UI
         private void HandleBackButtonClicked()
         {
             AudioManager.Instance?.PlayButton();
+            if (usesSceneEditableMap)
+            {
+                return;
+            }
+
             SnapScrollToLevel(GetSelectedOrUnlockedLevel());
         }
 
@@ -330,20 +354,184 @@ namespace CharacterMatch3.UI
 
             contentRoot = new GameObject("Content", typeof(RectTransform)).GetComponent<RectTransform>();
             contentRoot.SetParent(scrollObject.transform, false);
-            contentRoot.anchorMin = new Vector2(0f, 1f);
-            contentRoot.anchorMax = new Vector2(1f, 1f);
-            contentRoot.pivot = new Vector2(0.5f, 1f);
-            contentRoot.anchoredPosition = Vector2.zero;
-            contentRoot.sizeDelta = new Vector2(0f, FallbackMapSegmentHeight * mapSectionCount);
+            ConfigureRuntimeMapContent(contentRoot);
 
             scrollRect = scrollObject.GetComponent<ScrollRect>();
-            scrollRect.viewport = scrollObject.GetComponent<RectTransform>();
-            scrollRect.content = contentRoot;
-            scrollRect.horizontal = false;
-            scrollRect.vertical = true;
-            scrollRect.movementType = ScrollRect.MovementType.Clamped;
-            scrollRect.inertia = true;
-            scrollRect.scrollSensitivity = 34f;
+            ConfigureScrollRect(scrollRect, scrollObject.GetComponent<RectTransform>(), contentRoot);
+        }
+
+        private bool TryUseSceneEditableMapViewport()
+        {
+            if (sceneMapPreviewRoot == null)
+            {
+                return false;
+            }
+
+            contentRoot = FindSceneMapContentRoot(sceneMapPreviewRoot);
+            if (contentRoot == null)
+            {
+                return false;
+            }
+
+            sceneMapPreviewRoot.gameObject.SetActive(true);
+            sceneMapPreviewRoot.SetAsLastSibling();
+
+            var viewportImage = sceneMapPreviewRoot.GetComponent<Image>();
+            if (viewportImage == null)
+            {
+                viewportImage = sceneMapPreviewRoot.gameObject.AddComponent<Image>();
+            }
+
+            viewportImage.color = Color.white;
+            viewportImage.raycastTarget = true;
+
+            var viewportMask = sceneMapPreviewRoot.GetComponent<Mask>();
+            if (viewportMask == null)
+            {
+                viewportMask = sceneMapPreviewRoot.gameObject.AddComponent<Mask>();
+            }
+
+            viewportMask.showMaskGraphic = false;
+
+            scrollRect = sceneMapPreviewRoot.GetComponent<ScrollRect>();
+            if (scrollRect == null)
+            {
+                scrollRect = sceneMapPreviewRoot.gameObject.AddComponent<ScrollRect>();
+            }
+
+            ConfigureScrollRect(scrollRect, sceneMapPreviewRoot, contentRoot);
+            mapContentHeight = Mathf.Max(FallbackMapSegmentHeight, Mathf.Abs(contentRoot.sizeDelta.y));
+            return true;
+        }
+
+        private static RectTransform FindSceneMapContentRoot(Transform root)
+        {
+            var content = root.Find("Content") ?? root.Find("Preview Map Content");
+            return content != null ? content as RectTransform : null;
+        }
+
+        private static void ConfigureRuntimeMapContent(RectTransform target)
+        {
+            target.anchorMin = new Vector2(0f, 1f);
+            target.anchorMax = new Vector2(1f, 1f);
+            target.pivot = new Vector2(0.5f, 1f);
+            target.anchoredPosition = Vector2.zero;
+            target.sizeDelta = new Vector2(0f, FallbackMapSegmentHeight);
+            target.localScale = Vector3.one;
+        }
+
+        private static void ConfigureScrollRect(ScrollRect target, RectTransform viewport, RectTransform content)
+        {
+            target.viewport = viewport;
+            target.content = content;
+            target.horizontal = false;
+            target.vertical = true;
+            target.movementType = ScrollRect.MovementType.Clamped;
+            target.inertia = true;
+            target.scrollSensitivity = 34f;
+        }
+
+        private void BindSceneEditableMapNodes()
+        {
+            nodeViews.Clear();
+            if (contentRoot == null)
+            {
+                return;
+            }
+
+            for (var levelNumber = CharacterMatch3Constants.FirstLevel; levelNumber <= maxLevelNumber; levelNumber++)
+            {
+                var node = FindSceneEditableLevelNode(levelNumber);
+                if (node == null)
+                {
+                    continue;
+                }
+
+                var captured = levelNumber;
+                var button = node.GetComponent<Button>();
+                if (button == null)
+                {
+                    button = node.gameObject.AddComponent<Button>();
+                }
+
+                button.transition = Selectable.Transition.None;
+                var graphic = node.GetComponent<Graphic>();
+                if (graphic != null)
+                {
+                    graphic.raycastTarget = true;
+                }
+
+                button.targetGraphic = graphic;
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => TryStartLevel(captured));
+
+                nodeViews[levelNumber] = new LevelNodeView
+                {
+                    LevelNumber = levelNumber,
+                    Button = button,
+                    Image = node.GetComponent<Image>(),
+                    NumberLabel = FindChildComponentByName<Text>(node, "Number"),
+                    StarsLabel = FindChildComponentByName<Text>(node, "Stars"),
+                    BadgeLabel = FindChildComponentByName<Text>(node, "Badge")
+                };
+            }
+        }
+
+        private void BindSceneEditablePlayerMarker()
+        {
+            var marker = FindDeepChildByName(contentRoot, "PreviewPlayerMarker") as RectTransform;
+            if (marker == null)
+            {
+                return;
+            }
+
+            playerMarkerRect = marker;
+            playerMarker = marker.GetComponent<Image>();
+        }
+
+        private void RefreshSceneEditableMapButtons()
+        {
+            foreach (var pair in nodeViews)
+            {
+                if (pair.Value.Button == null)
+                {
+                    continue;
+                }
+
+                var levelNumber = pair.Key;
+                pair.Value.Button.interactable = CanPlayLevel(levelNumber) && SaveManager.IsLevelUnlocked(levelNumber);
+            }
+        }
+
+        private RectTransform FindSceneEditableLevelNode(int levelNumber)
+        {
+            var exactName = $"PreviewLevel_{levelNumber:000}";
+            var node = contentRoot.Find($"Preview Level Nodes/{exactName}") ?? FindDeepChildByName(contentRoot, exactName);
+            return node as RectTransform;
+        }
+
+        private static Transform FindDeepChildByName(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            foreach (Transform child in root)
+            {
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                var nested = FindDeepChildByName(child, childName);
+                if (nested != null)
+                {
+                    return nested;
+                }
+            }
+
+            return null;
         }
 
         private void CreateBottomBar(RectTransform safeRoot)
@@ -678,6 +866,7 @@ namespace CharacterMatch3.UI
             playerMarker.raycastTarget = false;
 
             var markerRect = playerMarker.rectTransform;
+            playerMarkerRect = markerRect;
             markerRect.anchorMin = new Vector2(0f, 1f);
             markerRect.anchorMax = new Vector2(0f, 1f);
             markerRect.pivot = new Vector2(0.5f, 0.5f);
@@ -772,6 +961,11 @@ namespace CharacterMatch3.UI
 
         private IEnumerator PlayPendingProgressionIfNeeded()
         {
+            if (usesSceneEditableMap)
+            {
+                yield break;
+            }
+
             yield return null;
             Canvas.ForceUpdateCanvases();
 
@@ -839,7 +1033,12 @@ namespace CharacterMatch3.UI
 
         private IEnumerator AnimateMarker(Vector2 from, Vector2 to)
         {
-            var markerRect = playerMarker.rectTransform;
+            if (playerMarkerRect == null)
+            {
+                yield break;
+            }
+
+            var markerRect = playerMarkerRect;
             for (var elapsed = 0f; elapsed < stepAnimationDuration; elapsed += Time.unscaledDeltaTime)
             {
                 var t = Mathf.Clamp01(elapsed / stepAnimationDuration);
@@ -994,12 +1193,12 @@ namespace CharacterMatch3.UI
 
         private void PlaceMarkerAtLevel(int levelNumber)
         {
-            if (playerMarker == null)
+            if (playerMarkerRect == null)
             {
                 return;
             }
 
-            playerMarker.rectTransform.anchoredPosition = GetMarkerPosition(levelNumber);
+            playerMarkerRect.anchoredPosition = GetMarkerPosition(levelNumber);
         }
 
         private void SnapScrollToLevel(int levelNumber)
@@ -1110,13 +1309,13 @@ namespace CharacterMatch3.UI
 
         private void AnimateIdleMarker()
         {
-            if (playerMarker == null || progressionPlaying)
+            if (usesSceneEditableMap || playerMarkerRect == null || progressionPlaying)
             {
                 return;
             }
 
             var pulse = 1f + Mathf.Sin(Time.unscaledTime * 2.4f) * 0.035f;
-            playerMarker.rectTransform.localScale = Vector3.one * pulse;
+            playerMarkerRect.localScale = Vector3.one * pulse;
         }
 
         private void SpawnMapBurst(Vector2 position, Color color, int particleCount, float radius)

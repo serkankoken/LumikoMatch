@@ -14,8 +14,9 @@ namespace CharacterMatch3.Editor
         private const string LevelMapScenePath = CharacterMatch3Constants.RootPath + "/Scenes/LevelMap.unity";
         private const string AutoRefreshSessionKey = "CharacterMatch3.LevelMapSceneUIBuilder.AutoRefreshOpenLevelMap";
         private const int PreviewLevelCount = 21;
-        private const float PreviewNodeSize = 76f;
-        private const float PreviewPlayerMarkerSize = 66f;
+        private const float PreviewMapContentHeight = 4512f;
+        private const float PreviewNodeSize = 92f;
+        private const float PreviewPlayerMarkerSize = 78f;
 
         private static readonly Vector2[] FallbackForestFactors =
         {
@@ -171,6 +172,16 @@ namespace CharacterMatch3.Editor
 
         private static void BuildMapPreview(LevelMapUI map, RectTransform previewRoot)
         {
+            ConfigurePreviewViewport(previewRoot);
+
+            RemoveDirectChild(previewRoot, "PreviewMapBackground");
+            RemoveDirectChild(previewRoot, "Preview Level Nodes");
+            RemoveDirectChild(previewRoot, "PreviewPlayerMarker");
+
+            var contentRoot = GetOrCreateRectChild(previewRoot, "Preview Map Content");
+            ConfigurePreviewContent(contentRoot);
+            ConfigurePreviewScroll(previewRoot, contentRoot);
+
             var serialized = new SerializedObject(map);
             var backgroundSprite = ReadSprite(serialized, "backgroundSprite") ??
                                    ReadSprite(serialized, "mapMeadowSprite") ??
@@ -179,15 +190,16 @@ namespace CharacterMatch3.Editor
             var completedSprite = ReadSprite(serialized, "completedNodeSprite");
             var currentSprite = ReadSprite(serialized, "currentNodeSprite");
             var lockedSprite = ReadSprite(serialized, "lockedNodeSprite");
+            var markerSprite = ReadBearMarkerSprite(serialized);
 
-            var background = GetOrCreateImage(previewRoot, "PreviewMapBackground", backgroundSprite != null ? Color.white : new Color(0.36f, 0.76f, 0.96f));
+            var background = GetOrCreateImage(contentRoot, "PreviewMapBackground", backgroundSprite != null ? Color.white : new Color(0.36f, 0.76f, 0.96f));
             background.sprite = backgroundSprite;
             background.preserveAspect = false;
             background.raycastTarget = false;
             Stretch(background.rectTransform);
             EditorUtility.SetDirty(background);
 
-            var nodesRoot = GetOrCreateRectChild(previewRoot, "Preview Level Nodes");
+            var nodesRoot = GetOrCreateRectChild(contentRoot, "Preview Level Nodes");
             Stretch(nodesRoot);
             ClearChildren(nodesRoot);
 
@@ -208,7 +220,12 @@ namespace CharacterMatch3.Editor
                 var node = GetOrCreateImage(nodesRoot, $"PreviewLevel_{levelNumber:000}", Color.white);
                 node.sprite = sprite;
                 node.preserveAspect = true;
-                node.raycastTarget = false;
+                node.raycastTarget = true;
+
+                var button = EnsureComponent<Button>(node.gameObject);
+                button.targetGraphic = node;
+                button.transition = Selectable.Transition.None;
+                EditorUtility.SetDirty(button);
 
                 var rect = node.rectTransform;
                 rect.anchorMin = rect.anchorMax = GetPreviewLevelAnchor(levelNumber, forestFactors, beachFactors, desertFactors, meadowPercent, beachPercent, desertPercent);
@@ -221,9 +238,16 @@ namespace CharacterMatch3.Editor
                 Stretch(label.rectTransform);
             }
 
-            var marker = GetOrCreateText(previewRoot, "PreviewPlayerMarker", "B", 32, TextAnchor.MiddleCenter, new Color(0.35f, 0.18f, 0.05f));
-            marker.fontStyle = FontStyle.Bold;
-            marker.color = new Color(0.35f, 0.18f, 0.05f);
+            var marker = GetOrCreateImage(contentRoot, "PreviewPlayerMarker", markerSprite != null ? Color.white : new Color(1f, 0.78f, 0.42f));
+            marker.sprite = markerSprite;
+            marker.preserveAspect = true;
+            marker.raycastTarget = false;
+            var staleText = marker.GetComponent<Text>();
+            if (staleText != null)
+            {
+                Object.DestroyImmediate(staleText);
+            }
+
             var markerRect = marker.rectTransform;
             markerRect.anchorMin = markerRect.anchorMax = GetPreviewLevelAnchor(CharacterMatch3Constants.FirstLevel, forestFactors, beachFactors, desertFactors, meadowPercent, beachPercent, desertPercent) + new Vector2(0f, 0.045f);
             markerRect.pivot = new Vector2(0.5f, 0.5f);
@@ -232,6 +256,44 @@ namespace CharacterMatch3.Editor
             marker.transform.SetAsLastSibling();
 
             EditorUtility.SetDirty(previewRoot);
+        }
+
+        private static void ConfigurePreviewViewport(RectTransform previewRoot)
+        {
+            var viewportGraphic = EnsureComponent<Image>(previewRoot.gameObject);
+            viewportGraphic.color = new Color(0.08f, 0.19f, 0.23f, 1f);
+            viewportGraphic.raycastTarget = true;
+            viewportGraphic.sprite = null;
+
+            var mask = EnsureComponent<Mask>(previewRoot.gameObject);
+            mask.showMaskGraphic = false;
+
+            EditorUtility.SetDirty(viewportGraphic);
+            EditorUtility.SetDirty(mask);
+        }
+
+        private static void ConfigurePreviewContent(RectTransform contentRoot)
+        {
+            contentRoot.anchorMin = new Vector2(0f, 0f);
+            contentRoot.anchorMax = new Vector2(1f, 0f);
+            contentRoot.pivot = new Vector2(0.5f, 0f);
+            contentRoot.anchoredPosition = Vector2.zero;
+            contentRoot.sizeDelta = new Vector2(0f, PreviewMapContentHeight);
+            contentRoot.localScale = Vector3.one;
+            EditorUtility.SetDirty(contentRoot);
+        }
+
+        private static void ConfigurePreviewScroll(RectTransform previewRoot, RectTransform contentRoot)
+        {
+            var scroll = EnsureComponent<ScrollRect>(previewRoot.gameObject);
+            scroll.viewport = previewRoot;
+            scroll.content = contentRoot;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.inertia = true;
+            scroll.scrollSensitivity = 34f;
+            EditorUtility.SetDirty(scroll);
         }
 
         private static Vector2 GetPreviewLevelAnchor(int levelNumber, Vector2[] forestFactors, Vector2[] beachFactors, Vector2[] desertFactors, float meadowPercent, float beachPercent, float desertPercent)
@@ -370,10 +432,34 @@ namespace CharacterMatch3.Editor
             }
         }
 
+        private static void RemoveDirectChild(Transform root, string childName)
+        {
+            var child = root.Find(childName);
+            if (child == null)
+            {
+                return;
+            }
+
+            Object.DestroyImmediate(child.gameObject);
+        }
+
         private static Sprite ReadSprite(SerializedObject serialized, string propertyName)
         {
             var property = serialized.FindProperty(propertyName);
             return property != null ? property.objectReferenceValue as Sprite : null;
+        }
+
+        private static Sprite ReadBearMarkerSprite(SerializedObject serialized)
+        {
+            var markerSprite = ReadSprite(serialized, "playerMarkerSprite");
+            if (markerSprite != null)
+            {
+                return markerSprite;
+            }
+
+            var catalogProperty = serialized.FindProperty("characterCatalog");
+            var catalog = catalogProperty != null ? catalogProperty.objectReferenceValue as CharacterCatalog : null;
+            return catalog != null ? catalog.GetSprite(CharacterType.Bear) : null;
         }
 
         private static float ReadFloat(SerializedObject serialized, string propertyName, float fallback)
