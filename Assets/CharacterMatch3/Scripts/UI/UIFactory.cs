@@ -135,13 +135,26 @@ namespace CharacterMatch3.UI
 
         public static void EnsureEventSystem()
         {
-            if (UnityEngine.EventSystems.EventSystem.current != null)
+            var eventSystems = Object.FindObjectsByType<UnityEngine.EventSystems.EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (eventSystems.Length > 0)
             {
+                var keep = UnityEngine.EventSystems.EventSystem.current != null
+                    ? UnityEngine.EventSystems.EventSystem.current
+                    : eventSystems[0];
+
+                foreach (var candidateEventSystem in eventSystems)
+                {
+                    if (candidateEventSystem != null && candidateEventSystem != keep)
+                    {
+                        Object.Destroy(candidateEventSystem.gameObject);
+                    }
+                }
+
                 return;
             }
 
-            var eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
-            Object.DontDestroyOnLoad(eventSystem);
+            var createdEventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
+            Object.DontDestroyOnLoad(createdEventSystem);
         }
     }
 
