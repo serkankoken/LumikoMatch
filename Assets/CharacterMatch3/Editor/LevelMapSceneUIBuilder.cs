@@ -12,6 +12,43 @@ namespace CharacterMatch3.Editor
     public static class LevelMapSceneUIBuilder
     {
         private const string LevelMapScenePath = CharacterMatch3Constants.RootPath + "/Scenes/LevelMap.unity";
+        private const string AutoRefreshSessionKey = "CharacterMatch3.LevelMapSceneUIBuilder.AutoRefreshOpenLevelMap";
+        private const int PreviewLevelCount = 21;
+        private const float PreviewNodeSize = 76f;
+        private const float PreviewPlayerMarkerSize = 66f;
+
+        private static readonly Vector2[] FallbackForestFactors =
+        {
+            new Vector2(0.47f, 0.88f),
+            new Vector2(0.43f, 0.73f),
+            new Vector2(0.54f, 0.64f),
+            new Vector2(0.5f, 0.49f),
+            new Vector2(0.42f, 0.36f),
+            new Vector2(0.56f, 0.24f),
+            new Vector2(0.51f, 0.11f)
+        };
+
+        private static readonly Vector2[] FallbackBeachFactors =
+        {
+            new Vector2(0.45f, 0.7f),
+            new Vector2(0.54f, 0.56f),
+            new Vector2(0.42f, 0.43f),
+            new Vector2(0.52f, 0.31f),
+            new Vector2(0.47f, 0.2f),
+            new Vector2(0.4f, 0.11f),
+            new Vector2(0.5f, 0.04f)
+        };
+
+        private static readonly Vector2[] FallbackDesertFactors =
+        {
+            new Vector2(0.49f, 0.96f),
+            new Vector2(0.56f, 0.88f),
+            new Vector2(0.48f, 0.8f),
+            new Vector2(0.56f, 0.72f),
+            new Vector2(0.47f, 0.64f),
+            new Vector2(0.54f, 0.56f),
+            new Vector2(0.49f, 0.48f)
+        };
 
         [MenuItem("Character Match-3/Map Tools/Create Scene Editable Map UI")]
         public static void CreateSceneEditableMapUi()
@@ -38,7 +75,54 @@ namespace CharacterMatch3.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("LevelMap scene editable UI is ready. Select LevelMapCanvas/SafeArea/Scene Editable Top Bar to adjust it in Scene view.");
+            Debug.Log("LevelMap scene editable UI is ready. Select LevelMapCanvas/SafeArea/Scene Editable Map Preview or Scene Editable Top Bar to adjust it in Scene view.");
+        }
+
+        [InitializeOnLoadMethod]
+        private static void QueueAutoRefreshOpenLevelMapScene()
+        {
+            if (Application.isBatchMode || SessionState.GetBool(AutoRefreshSessionKey, false))
+            {
+                return;
+            }
+
+            EditorApplication.delayCall += TryAutoRefreshOpenLevelMapScene;
+        }
+
+        private static void TryAutoRefreshOpenLevelMapScene()
+        {
+            if (SessionState.GetBool(AutoRefreshSessionKey, false))
+            {
+                return;
+            }
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += TryAutoRefreshOpenLevelMapScene;
+                return;
+            }
+
+            var scene = SceneManager.GetActiveScene();
+            if (scene.path != LevelMapScenePath)
+            {
+                return;
+            }
+
+            var maps = Object.FindObjectsByType<LevelMapUI>(FindObjectsSortMode.None);
+            if (maps.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var map in maps)
+            {
+                EnsureSceneEditableMapUI(map);
+            }
+
+            SessionState.SetBool(AutoRefreshSessionKey, true);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("LevelMap scene editable preview auto-refreshed. Select LevelMapCanvas/SafeArea/Scene Editable Map Preview in Hierarchy.");
         }
 
         internal static void EnsureSceneEditableMapUI(LevelMapUI map)
@@ -52,6 +136,10 @@ namespace CharacterMatch3.Editor
             var safeRoot = GetOrCreateRectChild(canvas.transform, "SafeArea");
             EnsureComponent<SafeAreaController>(safeRoot.gameObject);
             Stretch(safeRoot);
+
+            var mapPreviewRoot = GetOrCreateRectChild(safeRoot, "Scene Editable Map Preview");
+            Stretch(mapPreviewRoot);
+            BuildMapPreview(map, mapPreviewRoot);
 
             var topBarRoot = GetOrCreateRectChild(safeRoot, "Scene Editable Top Bar");
             Stretch(topBarRoot);
@@ -74,10 +162,91 @@ namespace CharacterMatch3.Editor
             progressText.fontStyle = FontStyle.Bold;
             Stretch(progressText.rectTransform);
 
+            mapPreviewRoot.SetAsFirstSibling();
             topBarRoot.SetAsLastSibling();
-            AssignReferences(map, canvas, safeRoot, topBarRoot, title, backButton, progressText);
+            AssignReferences(map, canvas, safeRoot, mapPreviewRoot, topBarRoot, title, backButton, progressText);
             EnsureEventSystem();
             SetLayerRecursively(canvas.gameObject, LayerMask.NameToLayer("UI"));
+        }
+
+        private static void BuildMapPreview(LevelMapUI map, RectTransform previewRoot)
+        {
+            var serialized = new SerializedObject(map);
+            var backgroundSprite = ReadSprite(serialized, "backgroundSprite") ??
+                                   ReadSprite(serialized, "mapMeadowSprite") ??
+                                   ReadSprite(serialized, "mapBeachSprite") ??
+                                   ReadSprite(serialized, "mapDesertSprite");
+            var completedSprite = ReadSprite(serialized, "completedNodeSprite");
+            var currentSprite = ReadSprite(serialized, "currentNodeSprite");
+            var lockedSprite = ReadSprite(serialized, "lockedNodeSprite");
+
+            var background = GetOrCreateImage(previewRoot, "PreviewMapBackground", backgroundSprite != null ? Color.white : new Color(0.36f, 0.76f, 0.96f));
+            background.sprite = backgroundSprite;
+            background.preserveAspect = false;
+            background.raycastTarget = false;
+            Stretch(background.rectTransform);
+            EditorUtility.SetDirty(background);
+
+            var nodesRoot = GetOrCreateRectChild(previewRoot, "Preview Level Nodes");
+            Stretch(nodesRoot);
+            ClearChildren(nodesRoot);
+
+            var forestFactors = ReadVector2Array(serialized, "forestLevelPositionFactors", FallbackForestFactors);
+            var beachFactors = ReadVector2Array(serialized, "beachLevelPositionFactors", FallbackBeachFactors);
+            var desertFactors = ReadVector2Array(serialized, "desertLevelPositionFactors", FallbackDesertFactors);
+            var meadowPercent = ReadFloat(serialized, "meadowSlicePercent", 0.36f);
+            var beachPercent = ReadFloat(serialized, "beachSlicePercent", 0.32f);
+            var desertPercent = Mathf.Max(0.12f, 1f - meadowPercent - beachPercent);
+
+            for (var levelNumber = CharacterMatch3Constants.FirstLevel; levelNumber <= Mathf.Min(PreviewLevelCount, CharacterMatch3Constants.LastLevel); levelNumber++)
+            {
+                var sprite = levelNumber == CharacterMatch3Constants.FirstLevel
+                    ? currentSprite
+                    : levelNumber <= 5
+                        ? completedSprite
+                        : lockedSprite;
+                var node = GetOrCreateImage(nodesRoot, $"PreviewLevel_{levelNumber:000}", Color.white);
+                node.sprite = sprite;
+                node.preserveAspect = true;
+                node.raycastTarget = false;
+
+                var rect = node.rectTransform;
+                rect.anchorMin = rect.anchorMax = GetPreviewLevelAnchor(levelNumber, forestFactors, beachFactors, desertFactors, meadowPercent, beachPercent, desertPercent);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = Vector2.one * PreviewNodeSize;
+                rect.anchoredPosition = Vector2.zero;
+
+                var label = GetOrCreateText(rect, "Number", levelNumber.ToString(), 26, TextAnchor.MiddleCenter, Color.white);
+                label.fontStyle = FontStyle.Bold;
+                Stretch(label.rectTransform);
+            }
+
+            var marker = GetOrCreateText(previewRoot, "PreviewPlayerMarker", "B", 32, TextAnchor.MiddleCenter, new Color(0.35f, 0.18f, 0.05f));
+            marker.fontStyle = FontStyle.Bold;
+            marker.color = new Color(0.35f, 0.18f, 0.05f);
+            var markerRect = marker.rectTransform;
+            markerRect.anchorMin = markerRect.anchorMax = GetPreviewLevelAnchor(CharacterMatch3Constants.FirstLevel, forestFactors, beachFactors, desertFactors, meadowPercent, beachPercent, desertPercent) + new Vector2(0f, 0.045f);
+            markerRect.pivot = new Vector2(0.5f, 0.5f);
+            markerRect.sizeDelta = Vector2.one * PreviewPlayerMarkerSize;
+            markerRect.anchoredPosition = Vector2.zero;
+            marker.transform.SetAsLastSibling();
+
+            EditorUtility.SetDirty(previewRoot);
+        }
+
+        private static Vector2 GetPreviewLevelAnchor(int levelNumber, Vector2[] forestFactors, Vector2[] beachFactors, Vector2[] desertFactors, float meadowPercent, float beachPercent, float desertPercent)
+        {
+            var zeroBased = Mathf.Max(0, levelNumber - CharacterMatch3Constants.FirstLevel);
+            var section = zeroBased / 7;
+            var localIndex = zeroBased % 7;
+            var factors = section == 0 ? forestFactors : section == 1 ? beachFactors : desertFactors;
+            var factor = factors[Mathf.Clamp(localIndex, 0, factors.Length - 1)];
+
+            var bottom = section == 0 ? 0f : section == 1 ? meadowPercent : meadowPercent + beachPercent;
+            var height = section == 0 ? meadowPercent : section == 1 ? beachPercent : desertPercent;
+            var x = Mathf.Clamp01(factor.x);
+            var y = Mathf.Clamp01(bottom + (1f - Mathf.Clamp01(factor.y)) * height);
+            return new Vector2(x, y);
         }
 
         private static Canvas GetOrCreateCanvas()
@@ -193,11 +362,49 @@ namespace CharacterMatch3.Editor
             return component;
         }
 
-        private static void AssignReferences(LevelMapUI map, Canvas canvas, RectTransform safeRoot, RectTransform topBarRoot, Text title, Button backButton, Text progressText)
+        private static void ClearChildren(Transform root)
+        {
+            for (var i = root.childCount - 1; i >= 0; i--)
+            {
+                Object.DestroyImmediate(root.GetChild(i).gameObject);
+            }
+        }
+
+        private static Sprite ReadSprite(SerializedObject serialized, string propertyName)
+        {
+            var property = serialized.FindProperty(propertyName);
+            return property != null ? property.objectReferenceValue as Sprite : null;
+        }
+
+        private static float ReadFloat(SerializedObject serialized, string propertyName, float fallback)
+        {
+            var property = serialized.FindProperty(propertyName);
+            return property != null ? property.floatValue : fallback;
+        }
+
+        private static Vector2[] ReadVector2Array(SerializedObject serialized, string propertyName, Vector2[] fallback)
+        {
+            var property = serialized.FindProperty(propertyName);
+            if (property == null || !property.isArray || property.arraySize == 0)
+            {
+                return fallback;
+            }
+
+            var values = new Vector2[property.arraySize];
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = property.GetArrayElementAtIndex(i).vector2Value;
+            }
+
+            return values;
+        }
+
+        private static void AssignReferences(LevelMapUI map, Canvas canvas, RectTransform safeRoot, RectTransform mapPreviewRoot, RectTransform topBarRoot, Text title, Button backButton, Text progressText)
         {
             var serialized = new SerializedObject(map);
             SetObjectReference(serialized, "sceneCanvas", canvas);
             SetObjectReference(serialized, "sceneSafeRoot", safeRoot);
+            SetObjectReference(serialized, "sceneMapPreviewRoot", mapPreviewRoot);
             SetObjectReference(serialized, "sceneTopBarRoot", topBarRoot);
             SetObjectReference(serialized, "sceneTitleText", title);
             SetObjectReference(serialized, "sceneBackButton", backButton);

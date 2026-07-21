@@ -39,6 +39,7 @@ namespace CharacterMatch3.UI
         [Tooltip("Optional canvas placed in LevelMap.unity so the top UI can be seen and adjusted in Scene view.")]
         [SerializeField] private Canvas sceneCanvas;
         [SerializeField] private RectTransform sceneSafeRoot;
+        [SerializeField] private RectTransform sceneMapPreviewRoot;
         [SerializeField] private RectTransform sceneTopBarRoot;
         [SerializeField] private Text sceneTitleText;
         [SerializeField] private Button sceneBackButton;
@@ -163,6 +164,11 @@ namespace CharacterMatch3.UI
                 safeRoot = new GameObject("SafeArea", typeof(RectTransform), typeof(SafeAreaController)).GetComponent<RectTransform>();
                 safeRoot.SetParent(canvas.transform, false);
                 UIFactory.Stretch(safeRoot);
+            }
+
+            if (sceneMapPreviewRoot != null)
+            {
+                sceneMapPreviewRoot.gameObject.SetActive(false);
             }
 
             UIFactory.CreatePanel("FallbackSky", safeRoot, new Color(0.36f, 0.76f, 0.96f));
