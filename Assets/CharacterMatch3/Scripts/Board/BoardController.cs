@@ -147,6 +147,7 @@ namespace CharacterMatch3.Board
                 boardView.SetSelected(null);
                 yield return boardView.AnimateSwap(from, to, false);
                 IsInputLocked = false;
+                HapticsManager.Medium();
                 yield break;
             }
 
@@ -158,6 +159,7 @@ namespace CharacterMatch3.Board
                 yield return boardView.AnimateSwap(from, to, false);
                 IsInputLocked = false;
                 AudioManager.Instance?.Play(AudioManager.Instance.invalidSwap);
+                HapticsManager.Medium();
                 yield break;
             }
 
@@ -175,11 +177,13 @@ namespace CharacterMatch3.Board
                 yield return boardView.AnimateSwap(from, to, false);
                 IsInputLocked = false;
                 AudioManager.Instance?.Play(AudioManager.Instance.invalidSwap);
+                HapticsManager.Medium();
                 yield break;
             }
 
             ValidMoveMade?.Invoke();
             AudioManager.Instance?.Play(AudioManager.Instance.swap);
+            HapticsManager.Light();
             yield return boardView.AnimateSwap(from, to, true);
 
             var preferred = to;
@@ -240,27 +244,35 @@ namespace CharacterMatch3.Board
                     boardView.QueueBlockerHit(coordinate);
                     CrateLayerRemoved?.Invoke(coordinate);
                     AudioManager.Instance?.Play(AudioManager.Instance.blockerBreak);
+                    HapticsManager.Medium();
                 },
                 LockLayerRemoved = coordinate =>
                 {
                     boardView.QueueBlockerHit(coordinate);
                     LockLayerRemoved?.Invoke(coordinate);
+                    HapticsManager.Medium();
                 },
                 CompanionDelivered = coordinate =>
                 {
                     boardView.QueueCompanionDelivered(coordinate);
                     CompanionDelivered?.Invoke(coordinate);
                     AudioManager.Instance?.Play(AudioManager.Instance.tokenDelivered);
+                    HapticsManager.Heavy();
                 },
                 ScoreAwarded = (amount, coordinate) =>
                 {
                     boardView.QueueScorePopup(amount, coordinate);
                     ScoreAwarded?.Invoke(amount, coordinate);
                 },
-                SpecialCreated = (coordinate, kind) => boardView.QueueSpecialCreated(coordinate, kind),
+                SpecialCreated = (coordinate, kind) =>
+                {
+                    boardView.QueueSpecialCreated(coordinate, kind);
+                    HapticsManager.Medium();
+                },
                 SpecialActivated = (coordinate, kind) =>
                 {
                     boardView.QueueSpecialActivated(coordinate, kind);
+                    HapticsManager.Heavy();
                     if (kind == PieceKind.Line)
                     {
                         AudioManager.Instance?.Play(AudioManager.Instance.lineClear);

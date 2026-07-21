@@ -204,6 +204,7 @@ namespace CharacterMatch3.Editor
             var map = root.GetComponent<LevelMapUI>();
             map.Configure(library, catalog);
             AssignMapBackground(map);
+            LevelMapSceneUIBuilder.EnsureSceneEditableMapUI(map);
             EditorUtility.SetDirty(root);
             CreateEventSystem();
             EditorSceneManager.SaveScene(scene, $"{CharacterMatch3Constants.RootPath}/Scenes/LevelMap.unity");

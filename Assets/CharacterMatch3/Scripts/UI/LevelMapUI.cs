@@ -35,6 +35,15 @@ namespace CharacterMatch3.UI
         [SerializeField] private Sprite lockedNodeSprite;
         [SerializeField] private Sprite playerMarkerSprite;
 
+        [Header("Scene Editable UI")]
+        [Tooltip("Optional canvas placed in LevelMap.unity so the top UI can be seen and adjusted in Scene view.")]
+        [SerializeField] private Canvas sceneCanvas;
+        [SerializeField] private RectTransform sceneSafeRoot;
+        [SerializeField] private RectTransform sceneTopBarRoot;
+        [SerializeField] private Text sceneTitleText;
+        [SerializeField] private Button sceneBackButton;
+        [SerializeField] private Text sceneProgressText;
+
         [Header("Map Node Positions (0-1)")]
         [Tooltip("Levels 1-7. X is left/right, Y is top/bottom inside the forest map segment.")]
         [SerializeField]
@@ -93,8 +102,10 @@ namespace CharacterMatch3.UI
         private ScrollRect scrollRect;
         private Image playerMarker;
         private Text progressLabel;
+        private RectTransform ambientSparkleRoot;
         private int maxLevelNumber;
         private int mapSectionCount;
+        private int highlightedLevelNumber;
         private float[] segmentHeightsByBottom;
         private float[] segmentTopYByBottom;
         private float[] segmentWidthsByBottom;
@@ -109,6 +120,8 @@ namespace CharacterMatch3.UI
             public int LevelNumber;
             public Button Button;
             public Image Image;
+            public Image Glow;
+            public Image BadgePlate;
             public Text NumberLabel;
             public Text StarsLabel;
             public Text BadgeLabel;
@@ -121,6 +134,12 @@ namespace CharacterMatch3.UI
             SaveManager.Load();
             Build();
             StartCoroutine(PlayPendingProgressionIfNeeded());
+        }
+
+        private void Update()
+        {
+            AnimateCurrentLevelGlow();
+            AnimateIdleMarker();
         }
 
         public void Configure(LevelLibrary library, CharacterCatalog catalog)
@@ -138,10 +157,13 @@ namespace CharacterMatch3.UI
 
             maxLevelNumber = CharacterMatch3Constants.LastLevel;
             mapSectionCount = Mathf.Max(1, Mathf.CeilToInt(maxLevelNumber / (float)LevelsPerMapSegment));
-            canvas = UIFactory.CreateCanvas("LevelMapCanvas");
-            safeRoot = new GameObject("SafeArea", typeof(RectTransform), typeof(SafeAreaController)).GetComponent<RectTransform>();
-            safeRoot.SetParent(canvas.transform, false);
-            UIFactory.Stretch(safeRoot);
+            if (!TryUseSceneEditableShell())
+            {
+                canvas = UIFactory.CreateCanvas("LevelMapCanvas");
+                safeRoot = new GameObject("SafeArea", typeof(RectTransform), typeof(SafeAreaController)).GetComponent<RectTransform>();
+                safeRoot.SetParent(canvas.transform, false);
+                UIFactory.Stretch(safeRoot);
+            }
 
             UIFactory.CreatePanel("FallbackSky", safeRoot, new Color(0.36f, 0.76f, 0.96f));
             CreateScrollView(safeRoot);
@@ -149,6 +171,7 @@ namespace CharacterMatch3.UI
             CreateMapBackgroundTiles();
             CreateLevelNodes();
             CreatePlayerMarker();
+            CreateAmbientSparkles(safeRoot);
             CreateTopBar(safeRoot);
             if (showBottomBar)
             {
@@ -160,26 +183,135 @@ namespace CharacterMatch3.UI
 
         private void CreateTopBar(RectTransform safeRoot)
         {
+            if (TryUseSceneEditableTopBar())
+            {
+                return;
+            }
+
             var titlePlate = UIFactory.CreatePanel("TitlePlate", safeRoot, new Color(1f, 0.9f, 0.66f, 0.96f));
             UIFactory.SetAnchored(titlePlate.GetComponent<RectTransform>(), new Vector2(0.12f, 0.89f), new Vector2(0.88f, 0.975f), Vector2.zero, Vector2.zero);
+            var titleShadow = titlePlate.AddComponent<Shadow>();
+            titleShadow.effectColor = new Color(0.18f, 0.1f, 0.04f, 0.24f);
+            titleShadow.effectDistance = new Vector2(0f, -5f);
 
-            var title = UIFactory.CreateText("Title", titlePlate.transform, "Adventure Map", 52, TextAnchor.MiddleCenter, new Color(0.35f, 0.15f, 0.04f));
+            var title = UIFactory.CreateText("Title", titlePlate.transform, "Lumiko Map", 52, TextAnchor.MiddleCenter, new Color(0.35f, 0.15f, 0.04f));
             title.fontStyle = FontStyle.Bold;
             UIFactory.Stretch(title.rectTransform);
 
-            var backButton = UIFactory.CreateButton("BackButton", safeRoot, "<", () =>
-            {
-                AudioManager.Instance?.PlayButton();
-                SnapScrollToLevel(GetSelectedOrUnlockedLevel());
-            });
+            var backButton = UIFactory.CreateButton("BackButton", safeRoot, "<", HandleBackButtonClicked);
             UIFactory.SetAnchored(backButton.GetComponent<RectTransform>(), new Vector2(0.035f, 0.91f), new Vector2(0.13f, 0.97f), Vector2.zero, Vector2.zero);
-            backButton.GetComponent<Image>().color = new Color(0.23f, 0.66f, 0.94f, 0.98f);
+            SetButtonColors(backButton, new Color(0.23f, 0.66f, 0.94f, 0.98f), Color.white);
 
-            var currency = UIFactory.CreatePanel("Currency", safeRoot, new Color(1f, 0.86f, 0.48f, 0.96f));
-            UIFactory.SetAnchored(currency.GetComponent<RectTransform>(), new Vector2(0.72f, 0.82f), new Vector2(0.96f, 0.875f), Vector2.zero, Vector2.zero);
-            var currencyText = UIFactory.CreateText("CurrencyText", currency.transform, "1250 +", 30, TextAnchor.MiddleCenter, new Color(0.35f, 0.18f, 0.04f));
-            currencyText.fontStyle = FontStyle.Bold;
-            UIFactory.Stretch(currencyText.rectTransform);
+            var progress = UIFactory.CreatePanel("LevelProgress", safeRoot, new Color(1f, 0.86f, 0.48f, 0.96f));
+            UIFactory.SetAnchored(progress.GetComponent<RectTransform>(), new Vector2(0.69f, 0.82f), new Vector2(0.96f, 0.875f), Vector2.zero, Vector2.zero);
+            var progressText = UIFactory.CreateText("ProgressText", progress.transform, $"Level {GetSelectedOrUnlockedLevel()}/{maxLevelNumber}", 27, TextAnchor.MiddleCenter, new Color(0.35f, 0.18f, 0.04f));
+            progressText.fontStyle = FontStyle.Bold;
+            UIFactory.Stretch(progressText.rectTransform);
+        }
+
+        private bool TryUseSceneEditableShell()
+        {
+            if (sceneCanvas == null || sceneSafeRoot == null)
+            {
+                return false;
+            }
+
+            canvas = sceneCanvas;
+            safeRoot = sceneSafeRoot;
+            ConfigureSceneCanvas(canvas);
+            UIFactory.EnsureEventSystem();
+            return true;
+        }
+
+        private bool TryUseSceneEditableTopBar()
+        {
+            ResolveSceneTopBarReferences();
+            if (sceneTopBarRoot == null && sceneTitleText == null && sceneBackButton == null && sceneProgressText == null)
+            {
+                return false;
+            }
+
+            if (sceneTopBarRoot != null)
+            {
+                sceneTopBarRoot.gameObject.SetActive(true);
+                sceneTopBarRoot.SetAsLastSibling();
+            }
+
+            if (sceneTitleText != null && string.IsNullOrWhiteSpace(sceneTitleText.text))
+            {
+                sceneTitleText.text = "Lumiko Map";
+            }
+
+            if (sceneProgressText != null)
+            {
+                sceneProgressText.text = $"Level {GetSelectedOrUnlockedLevel()}/{maxLevelNumber}";
+            }
+
+            if (sceneBackButton != null)
+            {
+                sceneBackButton.onClick.RemoveListener(HandleBackButtonClicked);
+                sceneBackButton.onClick.AddListener(HandleBackButtonClicked);
+                if (sceneBackButton.GetComponent<ButtonPressAnimator>() == null)
+                {
+                    sceneBackButton.gameObject.AddComponent<ButtonPressAnimator>();
+                }
+            }
+
+            return true;
+        }
+
+        private void ResolveSceneTopBarReferences()
+        {
+            if (sceneTopBarRoot == null)
+            {
+                return;
+            }
+
+            sceneBackButton ??= FindChildComponentByName<Button>(sceneTopBarRoot, "BackButton");
+            sceneTitleText ??= FindChildComponentByName<Text>(sceneTopBarRoot, "Title");
+            sceneProgressText ??= FindChildComponentByName<Text>(sceneTopBarRoot, "ProgressText");
+        }
+
+        private void HandleBackButtonClicked()
+        {
+            AudioManager.Instance?.PlayButton();
+            SnapScrollToLevel(GetSelectedOrUnlockedLevel());
+        }
+
+        private static void ConfigureSceneCanvas(Canvas targetCanvas)
+        {
+            if (targetCanvas == null)
+            {
+                return;
+            }
+
+            targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = targetCanvas.GetComponent<CanvasScaler>();
+            if (scaler != null)
+            {
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1080, 1920);
+                scaler.matchWidthOrHeight = 0.5f;
+            }
+        }
+
+        private static T FindChildComponentByName<T>(Transform root, string childName) where T : Component
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var children = root.GetComponentsInChildren<T>(true);
+            foreach (var child in children)
+            {
+                if (child.name == childName)
+                {
+                    return child;
+                }
+            }
+
+            return null;
         }
 
         private void CreateScrollView(RectTransform safeRoot)
@@ -469,6 +601,7 @@ namespace CharacterMatch3.UI
             {
                 var captured = levelNumber;
                 var node = UIFactory.CreateButton($"Level_{levelNumber:000}", contentRoot, string.Empty, () => TryStartLevel(captured));
+                node.transition = Selectable.Transition.None;
                 var nodeRect = node.GetComponent<RectTransform>();
                 nodeRect.anchorMin = new Vector2(0f, 1f);
                 nodeRect.anchorMax = new Vector2(0f, 1f);
@@ -478,10 +611,23 @@ namespace CharacterMatch3.UI
 
                 var image = node.GetComponent<Image>();
                 image.preserveAspect = true;
+                var nodeShadow = node.gameObject.AddComponent<Shadow>();
+                nodeShadow.effectColor = new Color(0.08f, 0.06f, 0.04f, 0.28f);
+                nodeShadow.effectDistance = new Vector2(0f, -7f);
+
+                var glow = UIFactory.CreateImage("Glow", node.transform, Color.clear);
+                glow.raycastTarget = false;
+                UIFactory.SetAnchored(glow.rectTransform, new Vector2(-0.16f, -0.16f), new Vector2(1.16f, 1.16f), Vector2.zero, Vector2.zero);
+                glow.transform.SetAsFirstSibling();
+
                 var numberLabel = node.transform.Find("Label").GetComponent<Text>();
                 numberLabel.fontStyle = FontStyle.Bold;
-                numberLabel.fontSize = 50;
-                numberLabel.resizeTextMaxSize = 50;
+                numberLabel.fontSize = 48;
+                numberLabel.resizeTextMaxSize = 48;
+
+                var starPlate = UIFactory.CreatePanel("StarPlate", node.transform, new Color(0.16f, 0.1f, 0.04f, 0.52f));
+                starPlate.GetComponent<Image>().raycastTarget = false;
+                UIFactory.SetAnchored(starPlate.GetComponent<RectTransform>(), new Vector2(-0.18f, -0.14f), new Vector2(1.18f, 0.13f), Vector2.zero, Vector2.zero);
 
                 var starsLabel = UIFactory.CreateText("Stars", node.transform, string.Empty, 34, TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.18f));
                 starsLabel.fontStyle = FontStyle.Bold;
@@ -492,6 +638,10 @@ namespace CharacterMatch3.UI
                 starsOutline.effectColor = new Color(0.28f, 0.16f, 0.03f, 0.9f);
                 starsOutline.effectDistance = new Vector2(2f, -2f);
 
+                var badgePlate = UIFactory.CreatePanel("BadgePlate", node.transform, new Color(0.24f, 0.58f, 0.92f, 0.94f));
+                badgePlate.GetComponent<Image>().raycastTarget = false;
+                UIFactory.SetAnchored(badgePlate.GetComponent<RectTransform>(), new Vector2(-0.12f, 0.86f), new Vector2(1.12f, 1.2f), Vector2.zero, Vector2.zero);
+
                 var badgeLabel = UIFactory.CreateText("Badge", node.transform, string.Empty, 27, TextAnchor.UpperCenter, Color.white);
                 badgeLabel.fontStyle = FontStyle.Bold;
                 UIFactory.SetAnchored(badgeLabel.rectTransform, new Vector2(-0.18f, 0.82f), new Vector2(1.18f, 1.23f), Vector2.zero, Vector2.zero);
@@ -501,6 +651,8 @@ namespace CharacterMatch3.UI
                     LevelNumber = levelNumber,
                     Button = node,
                     Image = image,
+                    Glow = glow,
+                    BadgePlate = badgePlate.GetComponent<Image>(),
                     NumberLabel = numberLabel,
                     StarsLabel = starsLabel,
                     BadgeLabel = badgeLabel
@@ -514,7 +666,7 @@ namespace CharacterMatch3.UI
             playerMarker.sprite = playerMarkerSprite != null
                 ? playerMarkerSprite
                 : characterCatalog != null
-                    ? characterCatalog.GetSprite(CharacterType.Cat)
+                    ? characterCatalog.GetSprite(CharacterType.Bear)
                     : null;
             playerMarker.preserveAspect = true;
             playerMarker.raycastTarget = false;
@@ -533,6 +685,69 @@ namespace CharacterMatch3.UI
             PlaceMarkerAtLevel(GetInitialFocusLevel());
             playerMarker.transform.SetAsLastSibling();
             progressLabel.transform.SetAsLastSibling();
+        }
+
+        private void CreateAmbientSparkles(RectTransform parent)
+        {
+            if (ambientSparkleRoot != null)
+            {
+                return;
+            }
+
+            ambientSparkleRoot = new GameObject("AmbientSparkles", typeof(RectTransform), typeof(CanvasGroup)).GetComponent<RectTransform>();
+            ambientSparkleRoot.SetParent(parent, false);
+            UIFactory.Stretch(ambientSparkleRoot);
+            var group = ambientSparkleRoot.GetComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+            StartCoroutine(AnimateAmbientSparkles());
+        }
+
+        private IEnumerator AnimateAmbientSparkles()
+        {
+            const int count = 18;
+            var rects = new RectTransform[count];
+            var images = new Image[count];
+            var centers = new Vector2[count];
+            var phases = new float[count];
+            var random = new System.Random(2407);
+
+            for (var i = 0; i < count; i++)
+            {
+                var sparkle = UIFactory.CreateImage($"Sparkle_{i:00}", ambientSparkleRoot, GetSparkleColor(i));
+                sparkle.raycastTarget = false;
+                var rect = sparkle.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = Vector2.one * (9f + i % 4 * 3f);
+                rects[i] = rect;
+                images[i] = sparkle;
+                centers[i] = new Vector2((float)(random.NextDouble() * 880f - 440f), (float)(random.NextDouble() * 1380f - 690f));
+                phases[i] = (float)random.NextDouble() * Mathf.PI * 2f;
+            }
+
+            while (ambientSparkleRoot != null)
+            {
+                var time = Time.unscaledTime;
+                for (var i = 0; i < count; i++)
+                {
+                    if (rects[i] == null || images[i] == null)
+                    {
+                        continue;
+                    }
+
+                    var bob = Mathf.Sin(time * (0.65f + i * 0.03f) + phases[i]);
+                    rects[i].anchoredPosition = centers[i] + new Vector2(Mathf.Sin(time * 0.28f + i) * 22f, bob * 18f);
+                    rects[i].localRotation = Quaternion.Euler(0f, 0f, time * (28f + i % 5 * 6f));
+                    rects[i].localScale = Vector3.one * (0.76f + Mathf.Abs(bob) * 0.42f);
+                    var color = images[i].color;
+                    color.a = 0.18f + Mathf.Abs(bob) * 0.28f;
+                    images[i].color = color;
+                }
+
+                yield return null;
+            }
         }
 
         private void TryStartLevel(int levelNumber)
@@ -631,6 +846,8 @@ namespace CharacterMatch3.UI
 
             markerRect.anchoredPosition = to;
             markerRect.localScale = Vector3.one;
+            SpawnMapBurst(to, new Color(1f, 0.88f, 0.28f, 1f), 16, 82f);
+            HapticsManager.Medium();
         }
 
         private IEnumerator PulseNode(int levelNumber)
@@ -649,6 +866,7 @@ namespace CharacterMatch3.UI
             }
 
             rect.localScale = Vector3.one;
+            SpawnMapBurst(rect.anchoredPosition, new Color(0.35f, 0.78f, 1f, 1f), 14, 76f);
         }
 
         private IEnumerator AnimateStarsForLevel(int levelNumber, int stars)
@@ -667,6 +885,8 @@ namespace CharacterMatch3.UI
             for (var visibleStars = 1; visibleStars <= stars; visibleStars++)
             {
                 view.StarsLabel.text = BuildStarText(visibleStars);
+                SpawnMapBurst(GetLevelPosition(levelNumber) + new Vector2(0f, -66f), new Color(1f, 0.86f, 0.18f, 1f), 8 + visibleStars * 3, 62f);
+                HapticsManager.Light();
                 for (var elapsed = 0f; elapsed < 0.22f; elapsed += Time.unscaledDeltaTime)
                 {
                     var t = Mathf.Clamp01(elapsed / 0.22f);
@@ -704,6 +924,7 @@ namespace CharacterMatch3.UI
 
         private void RefreshNodeStates(int suppressStarsForLevel = 0)
         {
+            highlightedLevelNumber = 0;
             foreach (var pair in nodeViews)
             {
                 var levelNumber = pair.Key;
@@ -712,6 +933,10 @@ namespace CharacterMatch3.UI
                 var current = unlocked && levelNumber == GetSelectedOrUnlockedLevel();
                 var stars = SaveManager.GetStars(levelNumber);
                 var completed = unlocked && stars > 0;
+                if (current)
+                {
+                    highlightedLevelNumber = levelNumber;
+                }
 
                 view.Button.interactable = unlocked && !progressionPlaying;
                 view.Image.sprite = current && currentNodeSprite != null
@@ -733,15 +958,27 @@ namespace CharacterMatch3.UI
                                 ? new Color(0.23f, 0.66f, 0.94f, 0.98f)
                                 : new Color(0.45f, 0.48f, 0.57f, 0.86f);
 
-                view.NumberLabel.text = unlocked ? levelNumber.ToString() : "LOCK";
-                view.NumberLabel.fontSize = unlocked ? 50 : 28;
-                view.NumberLabel.resizeTextMaxSize = unlocked ? 50 : 28;
+                view.NumberLabel.text = unlocked ? levelNumber.ToString() : "?";
+                view.NumberLabel.fontSize = unlocked ? 48 : 40;
+                view.NumberLabel.resizeTextMaxSize = unlocked ? 48 : 40;
                 view.NumberLabel.resizeTextMinSize = unlocked ? 25 : 14;
-                view.NumberLabel.color = unlocked ? Color.white : new Color(0.9f, 0.86f, 0.78f);
+                view.NumberLabel.color = unlocked ? Color.white : new Color(0.9f, 0.86f, 0.78f, 0.82f);
                 var displayStars = levelNumber == suppressStarsForLevel ? 0 : stars;
                 view.StarsLabel.text = unlocked && displayStars > 0 ? BuildStarText(displayStars) : string.Empty;
                 view.StarsLabel.rectTransform.localScale = Vector3.one;
-                view.BadgeLabel.text = current && !progressionPlaying ? "Play!" : string.Empty;
+                view.BadgeLabel.text = string.Empty;
+                view.BadgeLabel.color = Color.white;
+                if (view.BadgePlate != null)
+                {
+                    view.BadgePlate.enabled = false;
+                }
+
+                if (view.Glow != null)
+                {
+                    view.Glow.enabled = current;
+                    view.Glow.color = current ? new Color(1f, 0.88f, 0.28f, 0.2f) : Color.clear;
+                    view.Glow.rectTransform.localScale = Vector3.one;
+                }
             }
 
             PlaceMarkerAtLevel(GetSelectedOrUnlockedLevel());
@@ -850,6 +1087,151 @@ namespace CharacterMatch3.UI
             return GetLevelPosition(levelNumber) + new Vector2(0f, 82f);
         }
 
+        private void AnimateCurrentLevelGlow()
+        {
+            if (highlightedLevelNumber <= 0 || !nodeViews.TryGetValue(highlightedLevelNumber, out var view) || view.Glow == null || !view.Glow.enabled)
+            {
+                return;
+            }
+
+            var pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3.2f);
+            view.Glow.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.98f, 1.1f, pulse);
+            view.Glow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.unscaledTime * 1.6f) * 4f);
+            var color = view.Glow.color;
+            color.a = Mathf.Lerp(0.12f, 0.28f, pulse);
+            view.Glow.color = color;
+        }
+
+        private void AnimateIdleMarker()
+        {
+            if (playerMarker == null || progressionPlaying)
+            {
+                return;
+            }
+
+            var pulse = 1f + Mathf.Sin(Time.unscaledTime * 2.4f) * 0.035f;
+            playerMarker.rectTransform.localScale = Vector3.one * pulse;
+        }
+
+        private void SpawnMapBurst(Vector2 position, Color color, int particleCount, float radius)
+        {
+            if (contentRoot == null || particleCount <= 0)
+            {
+                return;
+            }
+
+            StartCoroutine(AnimateMapBurst(position, color, particleCount, radius));
+        }
+
+        private IEnumerator AnimateMapBurst(Vector2 position, Color color, int particleCount, float radius)
+        {
+            var root = new GameObject("MapBurst", typeof(RectTransform));
+            root.transform.SetParent(contentRoot, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0f, 1f);
+            rootRect.anchorMax = new Vector2(0f, 1f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.anchoredPosition = position;
+            rootRect.sizeDelta = Vector2.zero;
+            root.transform.SetAsLastSibling();
+
+            var rects = new RectTransform[particleCount];
+            var images = new Image[particleCount];
+            for (var i = 0; i < particleCount; i++)
+            {
+                var particle = UIFactory.CreateImage($"MapParticle_{i:00}", root.transform, ShiftMapBurstColor(color, i));
+                particle.raycastTarget = false;
+                var rect = particle.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = Vector2.one * (10f + i % 4 * 3f);
+                rect.localRotation = Quaternion.Euler(0f, 0f, i * 29f);
+                rects[i] = rect;
+                images[i] = particle;
+            }
+
+            const float duration = 0.42f;
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var eased = EaseOutCubic(t);
+                for (var i = 0; i < particleCount; i++)
+                {
+                    var angle = i / (float)particleCount * Mathf.PI * 2f + 0.25f;
+                    var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                    rects[i].anchoredPosition = direction * radius * Mathf.Lerp(0.18f, 1f, eased);
+                    rects[i].localRotation = Quaternion.Euler(0f, 0f, i * 29f + 230f * t);
+                    rects[i].localScale = Vector3.one * Mathf.Lerp(1.18f, 0.18f, t);
+                    var particleColor = images[i].color;
+                    particleColor.a = Mathf.Lerp(1f, 0f, t);
+                    images[i].color = particleColor;
+                }
+
+                yield return null;
+            }
+
+            Destroy(root);
+        }
+
+        private static Color ShiftMapBurstColor(Color color, int index)
+        {
+            var tint = 0.84f + index % 4 * 0.07f;
+            return new Color(
+                Mathf.Clamp01(color.r * tint + 0.08f),
+                Mathf.Clamp01(color.g * tint + 0.08f),
+                Mathf.Clamp01(color.b * tint + 0.08f),
+                1f);
+        }
+
+        private static Color GetSparkleColor(int index)
+        {
+            switch (index % 5)
+            {
+                case 0:
+                    return new Color(1f, 0.9f, 0.28f, 0.36f);
+                case 1:
+                    return new Color(0.48f, 0.88f, 1f, 0.32f);
+                case 2:
+                    return new Color(1f, 0.58f, 0.42f, 0.3f);
+                case 3:
+                    return new Color(0.52f, 0.92f, 0.52f, 0.32f);
+                default:
+                    return new Color(0.86f, 0.62f, 1f, 0.28f);
+            }
+        }
+
+        private static void SetButtonColors(Button button, Color color, Color textColor)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = color;
+            }
+
+            var colors = button.colors;
+            colors.normalColor = color;
+            colors.highlightedColor = Color.Lerp(color, Color.white, 0.18f);
+            colors.pressedColor = Color.Lerp(color, Color.black, 0.18f);
+            colors.selectedColor = Color.Lerp(color, Color.white, 0.08f);
+            colors.disabledColor = new Color(color.r * 0.6f, color.g * 0.6f, color.b * 0.6f, 0.58f);
+            colors.colorMultiplier = 1f;
+            colors.fadeDuration = 0.08f;
+            button.colors = colors;
+
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.color = textColor;
+                label.fontStyle = FontStyle.Bold;
+            }
+        }
+
         private static string BuildStarText(int stars)
         {
             stars = Mathf.Clamp(stars, 0, 3);
@@ -859,6 +1241,12 @@ namespace CharacterMatch3.UI
         private static float EaseInOut(float t)
         {
             return t * t * (3f - 2f * t);
+        }
+
+        private static float EaseOutCubic(float t)
+        {
+            var inverse = 1f - t;
+            return 1f - inverse * inverse * inverse;
         }
     }
 }

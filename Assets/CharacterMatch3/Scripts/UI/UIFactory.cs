@@ -1,5 +1,8 @@
+using System.Collections;
+using CharacterMatch3.Core;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace CharacterMatch3.UI
@@ -74,13 +77,34 @@ namespace CharacterMatch3.UI
 
             var button = buttonObject.GetComponent<Button>();
             button.targetGraphic = image;
+            button.transition = Selectable.Transition.ColorTint;
+            button.colors = new ColorBlock
+            {
+                normalColor = image.color,
+                highlightedColor = Color.Lerp(image.color, Color.white, 0.18f),
+                pressedColor = Color.Lerp(image.color, Color.black, 0.18f),
+                selectedColor = Color.Lerp(image.color, Color.white, 0.08f),
+                disabledColor = new Color(0.72f, 0.72f, 0.72f, 0.72f),
+                colorMultiplier = 1f,
+                fadeDuration = 0.08f
+            };
             if (callback != null)
             {
                 button.onClick.AddListener(callback);
             }
 
+            var shadow = buttonObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0.24f, 0.15f, 0.05f, 0.28f);
+            shadow.effectDistance = new Vector2(0f, -5f);
+
             var text = CreateText("Label", buttonObject.transform, label, 34, TextAnchor.MiddleCenter, new Color(0.15f, 0.13f, 0.1f));
             Stretch(text.rectTransform);
+            text.fontStyle = FontStyle.Bold;
+            var textShadow = text.gameObject.AddComponent<Shadow>();
+            textShadow.effectColor = new Color(1f, 1f, 1f, 0.36f);
+            textShadow.effectDistance = new Vector2(0f, 1f);
+
+            buttonObject.AddComponent<ButtonPressAnimator>();
             return button;
         }
 
@@ -109,7 +133,7 @@ namespace CharacterMatch3.UI
             rectTransform.offsetMax = offsetMax;
         }
 
-        private static void EnsureEventSystem()
+        public static void EnsureEventSystem()
         {
             if (UnityEngine.EventSystems.EventSystem.current != null)
             {
@@ -118,6 +142,102 @@ namespace CharacterMatch3.UI
 
             var eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
             Object.DontDestroyOnLoad(eventSystem);
+        }
+    }
+
+    internal sealed class ButtonPressAnimator : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler, IPointerClickHandler
+    {
+        private RectTransform rectTransform;
+        private Coroutine animationRoutine;
+        private Vector3 baseScale = Vector3.one;
+
+        private void Awake()
+        {
+            rectTransform = GetComponent<RectTransform>();
+            baseScale = rectTransform != null ? rectTransform.localScale : Vector3.one;
+        }
+
+        private void OnEnable()
+        {
+            if (rectTransform == null)
+            {
+                rectTransform = GetComponent<RectTransform>();
+            }
+
+            baseScale = rectTransform != null ? rectTransform.localScale : Vector3.one;
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            AnimateTo(0.94f, 0.06f);
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            AnimateTo(1f, 0.1f);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            AnimateTo(1f, 0.1f);
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            HapticsManager.Light();
+            AnimateTo(1.04f, 0.08f, 1f, 0.1f);
+        }
+
+        private void AnimateTo(float scale, float duration)
+        {
+            AnimateTo(scale, duration, scale, 0f);
+        }
+
+        private void AnimateTo(float firstScale, float firstDuration, float secondScale, float secondDuration)
+        {
+            if (!isActiveAndEnabled || rectTransform == null)
+            {
+                return;
+            }
+
+            if (animationRoutine != null)
+            {
+                StopCoroutine(animationRoutine);
+            }
+
+            animationRoutine = StartCoroutine(AnimateScale(firstScale, firstDuration, secondScale, secondDuration));
+        }
+
+        private IEnumerator AnimateScale(float firstScale, float firstDuration, float secondScale, float secondDuration)
+        {
+            yield return AnimateScaleStep(firstScale, firstDuration);
+            if (secondDuration > 0f)
+            {
+                yield return AnimateScaleStep(secondScale, secondDuration);
+            }
+
+            animationRoutine = null;
+        }
+
+        private IEnumerator AnimateScaleStep(float targetScale, float duration)
+        {
+            var start = rectTransform.localScale;
+            var end = baseScale * targetScale;
+            if (duration <= 0f)
+            {
+                rectTransform.localScale = end;
+                yield break;
+            }
+
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var eased = t * t * (3f - 2f * t);
+                rectTransform.localScale = Vector3.LerpUnclamped(start, end, eased);
+                yield return null;
+            }
+
+            rectTransform.localScale = end;
         }
     }
 }

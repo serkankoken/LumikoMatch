@@ -209,6 +209,7 @@ namespace CharacterMatch3.Core
             GameState.QueueMapStarReveal(level.levelNumber, SaveManager.GetStars(level.levelNumber));
             QueueMapProgressionToNextLevel();
             AudioManager.Instance?.Play(AudioManager.Instance.win);
+            HapticsManager.Heavy();
             gameplayUI.ShowWinPanel(scoreManager.Score, stars);
         }
 
@@ -239,6 +240,7 @@ namespace CharacterMatch3.Core
             boardController.SetInputLocked(true);
             yield return new WaitForSeconds(0.35f);
             AudioManager.Instance?.Play(AudioManager.Instance.lose);
+            HapticsManager.Medium();
             gameplayUI.ShowLosePanel(scoreManager.Score);
         }
 
