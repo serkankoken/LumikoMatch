@@ -32,6 +32,7 @@ namespace CharacterMatch3.Editor
         private const string ToonConfettiTexturePath = "Assets/Pack/Epic Toon FX/Textures/confetti.png";
         private const string ToonAuraTexturePath = "Assets/Pack/Epic Toon FX/Textures/aura_slam.png";
         private const string ToonPopTexturePath = "Assets/Pack/Epic Toon FX/Textures/explosion.png";
+        private const string ToonExplosionRoundTexturePath = "Assets/Pack/Epic Toon FX/Textures/explosionring.png";
 
         [MenuItem("Character Match-3/Create Character Catalog")]
         public static CharacterCatalog CreateOrUpdateCatalogMenu()
@@ -170,7 +171,8 @@ namespace CharacterMatch3.Editor
             var confetti = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonConfettiTexturePath);
             var aura = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonAuraTexturePath);
             var pop = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonPopTexturePath);
-            catalog.SetToonEffectTextures(sparkle, star, glow, ring, line, confetti, aura, pop);
+            var explosionRound = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonExplosionRoundTexturePath);
+            catalog.SetToonEffectTextures(sparkle, star, glow, ring, line, confetti, aura, pop, explosionRound);
         }
 
         private static bool TryResolveCharacterFromFileName(string path, out CharacterType characterType)

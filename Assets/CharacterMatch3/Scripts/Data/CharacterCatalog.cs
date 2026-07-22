@@ -41,6 +41,7 @@ namespace CharacterMatch3
         [SerializeField] private Texture2D toonConfettiTexture;
         [SerializeField] private Texture2D toonAuraTexture;
         [SerializeField] private Texture2D toonPopTexture;
+        [SerializeField] private Texture2D toonExplosionRoundTexture;
 
         public IReadOnlyList<CharacterSpriteEntry> Entries => entries;
         public IReadOnlyList<CharacterSpecialSpriteEntry> SpecialEntries => specialEntries;
@@ -55,6 +56,7 @@ namespace CharacterMatch3
         public Texture2D ToonConfettiTexture => toonConfettiTexture;
         public Texture2D ToonAuraTexture => toonAuraTexture;
         public Texture2D ToonPopTexture => toonPopTexture;
+        public Texture2D ToonExplosionRoundTexture => toonExplosionRoundTexture;
 
         public void EnsureDefaultEntries()
         {
@@ -184,7 +186,8 @@ namespace CharacterMatch3
             Texture2D lineTexture,
             Texture2D confettiTexture,
             Texture2D auraTexture,
-            Texture2D popTexture)
+            Texture2D popTexture,
+            Texture2D explosionRoundTexture)
         {
             toonSparkleTexture = sparkleTexture;
             toonStarTexture = starTexture;
@@ -194,6 +197,7 @@ namespace CharacterMatch3
             toonConfettiTexture = confettiTexture;
             toonAuraTexture = auraTexture;
             toonPopTexture = popTexture;
+            toonExplosionRoundTexture = explosionRoundTexture;
         }
 
         public Sprite GetGameplayBackgroundSprite(string themeId)

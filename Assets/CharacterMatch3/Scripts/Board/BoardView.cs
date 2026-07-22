@@ -506,6 +506,7 @@ namespace CharacterMatch3.Board
                 case BoardVisualEffectType.PieceRemoved:
                     SpawnBurst(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Rainbow ? 24 : 14, effect.PieceKind == PieceKind.Normal ? 98f : 118f, effect.PieceKind, 0.42f);
                     StartCoroutine(AnimateMatchSnap(effect.Coordinate, effect.Color, effect.PieceKind, effect.PieceKind != PieceKind.Normal));
+                    StartCoroutine(AnimateExplosionRound(effect.Coordinate, effect.Color, effect.PieceKind, effect.PieceKind == PieceKind.Normal ? 0.74f : 0.98f, 0.28f));
                     StartCoroutine(AnimateMiniShockwave(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Normal ? 0.72f : 1.02f));
                     StartCoroutine(AnimateToonRing(effect.Coordinate, effect.Color, 0.3f, 0.38f, effect.PieceKind == PieceKind.Normal ? 1.18f : 1.42f, 0.2f, false));
                     StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, false));
@@ -543,6 +544,7 @@ namespace CharacterMatch3.Board
                     StartCoroutine(AnimateToonRing(effect.Coordinate, effect.Color, 0.42f, 0.62f, effect.PieceKind == PieceKind.Rainbow ? 2.55f : effect.PieceKind == PieceKind.Burst ? 2.05f : 1.72f, 0.34f, false));
                     StartCoroutine(AnimateSparkleHalo(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Rainbow ? 22 : 14, effect.PieceKind == PieceKind.Burst ? 118f : 100f, 0.52f, effect.PieceKind, false));
                     StartCoroutine(AnimateSpecialSignature(effect.Coordinate, effect.Color, effect.PieceKind, effect.LineOrientation));
+                    StartCoroutine(AnimateExplosionRound(effect.Coordinate, effect.Color, effect.PieceKind, effect.PieceKind == PieceKind.Burst ? 1.64f : 1.12f, effect.PieceKind == PieceKind.Burst ? 0.42f : 0.34f));
                     StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, true));
                     StartCoroutine(AnimateSpecialFlash(effect.Coordinate, effect.Color, effect.PieceKind, effect.LineOrientation));
                     if (view != null)
@@ -556,6 +558,11 @@ namespace CharacterMatch3.Board
                     {
                         SpawnBurst(effect.Coordinate, effect.Color, 18, 82f, effect.PieceKind, 0.46f);
                         StartCoroutine(AnimateSpecialCreatedGleam(effect.Coordinate, effect.Color, effect.PieceKind, effect.LineOrientation));
+                        if (effect.PieceKind == PieceKind.Burst)
+                        {
+                            StartCoroutine(AnimateExplosionRound(effect.Coordinate, effect.Color, effect.PieceKind, 1.18f, 0.34f));
+                        }
+
                         StartCoroutine(AnimateToonRing(effect.Coordinate, effect.Color, 0.42f, 1.45f, 0.72f, 0.28f, true));
                         StartCoroutine(AnimateSparkleHalo(effect.Coordinate, effect.Color, 10, 76f, 0.46f, effect.PieceKind, true));
                         StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, false));
@@ -1069,6 +1076,96 @@ namespace CharacterMatch3.Board
                 var glowColor = glow.color;
                 glowColor.a = Mathf.Lerp(0.18f * strength, 0f, EaseInCubic(t));
                 glow.color = glowColor;
+                yield return null;
+            }
+
+            Destroy(root);
+        }
+
+        private IEnumerator AnimateExplosionRound(BoardCoordinate coordinate, Color color, PieceKind kind, float intensity, float duration)
+        {
+            if (effectsRoot == null)
+            {
+                yield break;
+            }
+
+            intensity = Mathf.Clamp(intensity, 0.5f, 2.2f);
+            var root = new GameObject("ExplosionRound", typeof(RectTransform));
+            root.transform.SetParent(effectsRoot, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.anchoredPosition = GetEffectPosition(coordinate);
+            rootRect.sizeDelta = Vector2.zero;
+
+            var cellSize = GetEffectCellSize();
+            var texture = GetFirstAvailableTexture(catalog?.ToonExplosionRoundTexture, catalog?.ToonPopTexture, catalog?.ToonRingTexture, catalog?.ToonGlowTexture);
+            var outerColor = Color.Lerp(Color.white, color, kind == PieceKind.Burst ? 0.52f : 0.34f);
+            outerColor.a = kind == PieceKind.Burst ? 0.92f : 0.68f;
+            var outer = CreateEffectGraphic("ExplosionRoundOuter", rootRect, texture, outerColor);
+            outer.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            outer.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            outer.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            outer.rectTransform.sizeDelta = cellSize * Mathf.Lerp(1f, 1.38f, Mathf.Clamp01(intensity - 0.7f));
+
+            var innerColor = Color.Lerp(Color.white, color, 0.2f);
+            innerColor.a = kind == PieceKind.Burst ? 0.54f : 0.36f;
+            var inner = CreateEffectGraphic("ExplosionRoundCore", rootRect, GetFirstAvailableTexture(catalog?.ToonGlowTexture, texture), innerColor);
+            inner.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            inner.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            inner.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            inner.rectTransform.sizeDelta = cellSize * 0.78f;
+
+            var emberCount = kind == PieceKind.Burst ? 10 : 6;
+            var emberRects = new RectTransform[emberCount];
+            var emberGraphics = new Graphic[emberCount];
+            for (var i = 0; i < emberCount; i++)
+            {
+                var ember = CreateEffectGraphic($"ExplosionRoundEmber_{i}", rootRect, GetBurstTexture(kind, i), ShiftColor(color, i + 7));
+                var rect = ember.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = Vector2.one * Mathf.Lerp(11f, kind == PieceKind.Burst ? 28f : 20f, (i % 4) / 3f);
+                emberRects[i] = rect;
+                emberGraphics[i] = ember;
+            }
+
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var popT = Mathf.Clamp01(t / 0.45f);
+                var moveT = EaseOutCubic(t);
+                outer.rectTransform.localScale = Vector3.one * Mathf.LerpUnclamped(0.16f, 1.12f * intensity, EaseOutBack(popT));
+                outer.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(-18f, 84f, moveT));
+
+                inner.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.28f, 1.05f + intensity * 0.08f, EaseOutCubic(t));
+                inner.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(12f, -42f, moveT));
+
+                var outerGraphicColor = outer.color;
+                outerGraphicColor.a = Mathf.Lerp(outerColor.a, 0f, EaseInCubic(t));
+                outer.color = outerGraphicColor;
+
+                var innerGraphicColor = inner.color;
+                innerGraphicColor.a = Mathf.Lerp(innerColor.a, 0f, EaseInCubic(t));
+                inner.color = innerGraphicColor;
+
+                var radius = cellSize.x * Mathf.Lerp(0.18f, kind == PieceKind.Burst ? 0.92f : 0.62f, moveT) * intensity;
+                for (var i = 0; i < emberRects.Length; i++)
+                {
+                    var phase = (i / (float)emberRects.Length) * Mathf.PI * 2f + 0.31f;
+                    var direction = new Vector2(Mathf.Cos(phase), Mathf.Sin(phase));
+                    var tangent = new Vector2(-direction.y, direction.x);
+                    var swirl = tangent * Mathf.Sin(t * Mathf.PI) * 12f * intensity * (i % 2 == 0 ? 1f : -1f);
+                    emberRects[i].anchoredPosition = direction * radius + swirl;
+                    emberRects[i].localScale = Vector3.one * Mathf.Lerp(1f, 0.14f, EaseInCubic(t));
+                    emberRects[i].localRotation = Quaternion.Euler(0f, 0f, i * 31f + Mathf.Lerp(0f, 220f, moveT));
+                    var emberColor = emberGraphics[i].color;
+                    emberColor.a = Mathf.Lerp(0.95f, 0f, EaseInCubic(t));
+                    emberGraphics[i].color = emberColor;
+                }
+
                 yield return null;
             }
 

@@ -53,6 +53,13 @@ namespace CharacterMatch3.Save
             return levelNumber <= data.highestUnlockedLevel;
         }
 
+        public static bool IsLevelCompleted(int levelNumber)
+        {
+            EnsureLoaded();
+            EnsureLevelIndex(levelNumber);
+            return data.starsPerLevel[levelNumber] > 0 || levelNumber < data.highestUnlockedLevel;
+        }
+
         public static int GetStars(int levelNumber)
         {
             EnsureLoaded();

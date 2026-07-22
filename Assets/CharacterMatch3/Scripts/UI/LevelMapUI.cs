@@ -201,7 +201,8 @@ namespace CharacterMatch3.UI
             }
             if (usingSceneEditableMap)
             {
-                RefreshSceneEditableMapButtons();
+                RefreshNodeStates();
+                SnapScrollToLevel(GetInitialFocusLevel());
             }
             else
             {
@@ -499,16 +500,7 @@ namespace CharacterMatch3.UI
 
         private void RefreshSceneEditableMapButtons()
         {
-            foreach (var pair in nodeViews)
-            {
-                if (pair.Value.Button == null)
-                {
-                    continue;
-                }
-
-                var levelNumber = pair.Key;
-                pair.Value.Button.interactable = CanPlayLevel(levelNumber) && SaveManager.IsLevelUnlocked(levelNumber);
-            }
+            RefreshNodeStates();
         }
 
         private RectTransform FindSceneEditableLevelNode(int levelNumber)
@@ -1149,12 +1141,13 @@ namespace CharacterMatch3.UI
 
         private IEnumerator AnimateScrollToLevel(int levelNumber, float duration)
         {
-            if (usesSceneEditableMap || scrollRect == null || contentRoot == null)
+            if (scrollRect == null || contentRoot == null)
             {
                 yield break;
             }
 
             Canvas.ForceUpdateCanvases();
+            scrollRect.StopMovement();
             var start = contentRoot.anchoredPosition;
             var target = new Vector2(start.x, GetScrollYForLevel(levelNumber));
             for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
@@ -1169,27 +1162,42 @@ namespace CharacterMatch3.UI
 
         private void RefreshNodeStates(int suppressStarsForLevel = 0)
         {
-            if (usesSceneEditableMap)
-            {
-                RefreshSceneEditableMapButtons();
-                return;
-            }
-
             highlightedLevelNumber = 0;
             foreach (var pair in nodeViews)
             {
                 var levelNumber = pair.Key;
                 var view = pair.Value;
-                var unlocked = CanPlayLevel(levelNumber) && SaveManager.IsLevelUnlocked(levelNumber);
-                var current = unlocked && levelNumber == GetSelectedOrUnlockedLevel();
-                var stars = SaveManager.GetStars(levelNumber);
-                var completed = unlocked && stars > 0;
-                if (current)
-                {
-                    highlightedLevelNumber = levelNumber;
-                }
+                ApplyNodeState(view, levelNumber, suppressStarsForLevel);
+            }
 
+            PlaceMarkerAtLevel(GetSelectedOrUnlockedLevel());
+            playerMarker?.transform.SetAsLastSibling();
+            progressLabel?.transform.SetAsLastSibling();
+        }
+
+        private void ApplyNodeState(LevelNodeView view, int levelNumber, int suppressStarsForLevel)
+        {
+            if (view == null)
+            {
+                return;
+            }
+
+            var unlocked = CanPlayLevel(levelNumber) && SaveManager.IsLevelUnlocked(levelNumber);
+            var current = unlocked && levelNumber == GetSelectedOrUnlockedLevel();
+            var stars = SaveManager.GetStars(levelNumber);
+            var completed = unlocked && SaveManager.IsLevelCompleted(levelNumber);
+            if (current)
+            {
+                highlightedLevelNumber = levelNumber;
+            }
+
+            if (view.Button != null)
+            {
                 view.Button.interactable = unlocked && !progressionPlaying;
+            }
+
+            if (view.Image != null)
+            {
                 view.Image.sprite = current && currentNodeSprite != null
                     ? currentNodeSprite
                     : completed && completedNodeSprite != null
@@ -1208,33 +1216,41 @@ namespace CharacterMatch3.UI
                             : unlocked
                                 ? new Color(0.23f, 0.66f, 0.94f, 0.98f)
                                 : new Color(0.45f, 0.48f, 0.57f, 0.86f);
+            }
 
+            if (view.NumberLabel != null)
+            {
                 view.NumberLabel.text = unlocked ? levelNumber.ToString() : "?";
                 view.NumberLabel.fontSize = unlocked ? 48 : 40;
                 view.NumberLabel.resizeTextMaxSize = unlocked ? 48 : 40;
                 view.NumberLabel.resizeTextMinSize = unlocked ? 25 : 14;
                 view.NumberLabel.color = unlocked ? Color.white : new Color(0.9f, 0.86f, 0.78f, 0.82f);
-                var displayStars = levelNumber == suppressStarsForLevel ? 0 : stars;
-                view.StarsLabel.text = unlocked && displayStars > 0 ? BuildStarText(displayStars) : string.Empty;
-                view.StarsLabel.rectTransform.localScale = Vector3.one;
-                view.BadgeLabel.text = string.Empty;
-                view.BadgeLabel.color = Color.white;
-                if (view.BadgePlate != null)
-                {
-                    view.BadgePlate.enabled = false;
-                }
-
-                if (view.Glow != null)
-                {
-                    view.Glow.enabled = current;
-                    view.Glow.color = current ? new Color(1f, 0.88f, 0.28f, 0.2f) : Color.clear;
-                    view.Glow.rectTransform.localScale = Vector3.one;
-                }
             }
 
-            PlaceMarkerAtLevel(GetSelectedOrUnlockedLevel());
-            playerMarker?.transform.SetAsLastSibling();
-            progressLabel?.transform.SetAsLastSibling();
+            var displayStars = levelNumber == suppressStarsForLevel ? 0 : stars;
+            if (view.StarsLabel != null)
+            {
+                view.StarsLabel.text = unlocked && displayStars > 0 ? BuildStarText(displayStars) : string.Empty;
+                view.StarsLabel.rectTransform.localScale = Vector3.one;
+            }
+
+            if (view.BadgeLabel != null)
+            {
+                view.BadgeLabel.text = string.Empty;
+                view.BadgeLabel.color = Color.white;
+            }
+
+            if (view.BadgePlate != null)
+            {
+                view.BadgePlate.enabled = false;
+            }
+
+            if (view.Glow != null)
+            {
+                view.Glow.enabled = current;
+                view.Glow.color = current ? new Color(1f, 0.88f, 0.28f, 0.2f) : Color.clear;
+                view.Glow.rectTransform.localScale = Vector3.one;
+            }
         }
 
         private void PlaceMarkerAtLevel(int levelNumber)
@@ -1257,12 +1273,13 @@ namespace CharacterMatch3.UI
 
         private void SnapScrollToLevel(int levelNumber)
         {
-            if (usesSceneEditableMap || contentRoot == null)
+            if (scrollRect == null || contentRoot == null)
             {
                 return;
             }
 
             Canvas.ForceUpdateCanvases();
+            scrollRect.StopMovement();
             var position = contentRoot.anchoredPosition;
             position.y = GetScrollYForLevel(levelNumber);
             contentRoot.anchoredPosition = position;
@@ -1272,10 +1289,46 @@ namespace CharacterMatch3.UI
         {
             var viewport = scrollRect != null && scrollRect.viewport != null ? scrollRect.viewport : (RectTransform)contentRoot.parent;
             var viewportHeight = viewport.rect.height > 1f ? viewport.rect.height : 1500f;
-            var contentHeight = contentRoot.rect.height > 1f ? contentRoot.rect.height : contentRoot.sizeDelta.y;
-            var levelPosition = GetLevelPosition(levelNumber);
-            var target = -levelPosition.y - viewportHeight * 0.52f;
-            return Mathf.Clamp(target, 0f, Mathf.Max(0f, contentHeight - viewportHeight));
+            var levelViewportPosition = GetLevelViewportPosition(levelNumber, viewport);
+            var desiredViewportY = Mathf.Lerp(viewport.rect.yMin, viewport.rect.yMax, 0.56f);
+            var target = contentRoot.anchoredPosition.y + desiredViewportY - levelViewportPosition.y;
+            return ClampScrollY(target, viewportHeight);
+        }
+
+        private Vector2 GetLevelViewportPosition(int levelNumber, RectTransform viewport)
+        {
+            if (viewport == null)
+            {
+                return Vector2.zero;
+            }
+
+            if (nodeViews.TryGetValue(levelNumber, out var view) && view.Rect != null)
+            {
+                var worldCenter = view.Rect.TransformPoint(view.Rect.rect.center);
+                var viewportCenter = viewport.InverseTransformPoint(worldCenter);
+                return new Vector2(viewportCenter.x, viewportCenter.y);
+            }
+
+            var fallbackWorldPosition = contentRoot.TransformPoint(GetLevelPosition(levelNumber));
+            var fallbackViewportPosition = viewport.InverseTransformPoint(fallbackWorldPosition);
+            return new Vector2(fallbackViewportPosition.x, fallbackViewportPosition.y);
+        }
+
+        private float ClampScrollY(float targetY, float viewportHeight)
+        {
+            var contentHeight = contentRoot.rect.height > 1f ? contentRoot.rect.height : Mathf.Abs(contentRoot.sizeDelta.y);
+            var maxScroll = Mathf.Max(0f, contentHeight - viewportHeight);
+            if (maxScroll <= 0f)
+            {
+                return 0f;
+            }
+
+            var bottomAnchoredContent = contentRoot.pivot.y <= 0.1f &&
+                                        contentRoot.anchorMin.y <= 0.01f &&
+                                        contentRoot.anchorMax.y <= 0.01f;
+            return bottomAnchoredContent
+                ? Mathf.Clamp(targetY, -maxScroll, 0f)
+                : Mathf.Clamp(targetY, 0f, maxScroll);
         }
 
         private int GetInitialFocusLevel()
@@ -1285,13 +1338,15 @@ namespace CharacterMatch3.UI
 
         private int GetSelectedOrUnlockedLevel()
         {
+            var highest = Mathf.Clamp(SaveManager.Data.highestUnlockedLevel, CharacterMatch3Constants.FirstLevel, maxLevelNumber);
             var selected = Mathf.Clamp(GameState.SelectedLevelNumber, CharacterMatch3Constants.FirstLevel, maxLevelNumber);
-            if (CanPlayLevel(selected) && SaveManager.IsLevelUnlocked(selected))
+            if ((selected > CharacterMatch3Constants.FirstLevel || highest <= CharacterMatch3Constants.FirstLevel) &&
+                CanPlayLevel(selected) &&
+                SaveManager.IsLevelUnlocked(selected))
             {
                 return selected;
             }
 
-            var highest = Mathf.Clamp(SaveManager.Data.highestUnlockedLevel, CharacterMatch3Constants.FirstLevel, maxLevelNumber);
             for (var levelNumber = highest; levelNumber >= CharacterMatch3Constants.FirstLevel; levelNumber--)
             {
                 if (CanPlayLevel(levelNumber) && SaveManager.IsLevelUnlocked(levelNumber))

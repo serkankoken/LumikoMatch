@@ -123,3 +123,4 @@ MonoBehaviour:
   toonConfettiTexture: {fileID: 2800000, guid: fc889383b2da2db439ea6a25ba1b4f9b, type: 3}
   toonAuraTexture: {fileID: 2800000, guid: f49e22d051dd27a429c90269e9bdf852, type: 3}
   toonPopTexture: {fileID: 2800000, guid: 43cc8e40a0012354982a74cadd9a22df, type: 3}
+  toonExplosionRoundTexture: {fileID: 2800000, guid: dc2257ca6dfc07a4a861a2d0210003e6, type: 3}

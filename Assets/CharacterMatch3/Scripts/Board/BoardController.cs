@@ -129,7 +129,7 @@ namespace CharacterMatch3.Board
 
         private void SelectIfSwappable(BoardCoordinate coordinate)
         {
-            selectedCoordinate = model.CanSwap(coordinate) ? coordinate : null;
+            selectedCoordinate = model.CanSwap(coordinate) ? (BoardCoordinate?)coordinate : null;
             boardView.SetSelected(selectedCoordinate);
         }
 
