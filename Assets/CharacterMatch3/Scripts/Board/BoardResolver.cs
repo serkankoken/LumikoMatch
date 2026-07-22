@@ -12,8 +12,8 @@ namespace CharacterMatch3.Board
         public Action<BoardCoordinate> LockLayerRemoved;
         public Action<BoardCoordinate> CompanionDelivered;
         public Action<int, BoardCoordinate> ScoreAwarded;
-        public Action<BoardCoordinate, PieceKind> SpecialCreated;
-        public Action<BoardCoordinate, PieceKind> SpecialActivated;
+        public Action<BoardCoordinate, PieceKind, LineOrientation> SpecialCreated;
+        public Action<BoardCoordinate, PieceKind, LineOrientation> SpecialActivated;
     }
 
     public sealed class BoardResolveResult
@@ -82,12 +82,12 @@ namespace CharacterMatch3.Board
         {
             if (pieceA.IsSpecial)
             {
-                events?.SpecialActivated?.Invoke(a, pieceA.Kind);
+                events?.SpecialActivated?.Invoke(a, pieceA.Kind, pieceA.LineOrientation);
             }
 
             if (pieceB.IsSpecial)
             {
-                events?.SpecialActivated?.Invoke(b, pieceB.Kind);
+                events?.SpecialActivated?.Invoke(b, pieceB.Kind, pieceB.LineOrientation);
             }
         }
 
@@ -131,7 +131,7 @@ namespace CharacterMatch3.Board
                 var orientation = kind == PieceKind.Line ? group.CreatedLineOrientation : LineOrientation.Horizontal;
                 specialSpawnCells[spawnCoordinate] = BoardPiece.Special(kind, group.Character, orientation, model.CreatePieceId());
                 result.SpecialsCreated++;
-                events?.SpecialCreated?.Invoke(spawnCoordinate, kind);
+                events?.SpecialCreated?.Invoke(spawnCoordinate, kind, orientation);
 
                 if (kind == PieceKind.Rainbow)
                 {
@@ -429,7 +429,7 @@ namespace CharacterMatch3.Board
                 if (piece != null && piece.IsSpecial && !preservedPieces.Contains(coordinate) && activated.Add(coordinate))
                 {
                     queue.Enqueue((coordinate, piece.Clone()));
-                    events?.SpecialActivated?.Invoke(coordinate, piece.Kind);
+                    events?.SpecialActivated?.Invoke(coordinate, piece.Kind, piece.LineOrientation);
                 }
             }
 
@@ -449,7 +449,7 @@ namespace CharacterMatch3.Board
                     if (piece != null && piece.IsSpecial && activated.Add(coordinate))
                     {
                         queue.Enqueue((coordinate, piece.Clone()));
-                        events?.SpecialActivated?.Invoke(coordinate, piece.Kind);
+                        events?.SpecialActivated?.Invoke(coordinate, piece.Kind, piece.LineOrientation);
                     }
                 }
 

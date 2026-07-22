@@ -193,7 +193,7 @@ namespace CharacterMatch3.Board
                 var result = BoardResolver.ResolveSpecialSwap(model, from, to, level, scoringConfig, CreateResolutionEvents());
                 if (result.Changed)
                 {
-                    AudioManager.Instance?.Play(AudioManager.Instance.cascade);
+                    AudioManager.Instance?.PlayMatch(1);
                     yield return boardView.AnimateBoardSettled();
                 }
             }
@@ -208,7 +208,7 @@ namespace CharacterMatch3.Board
                     break;
                 }
 
-                AudioManager.Instance?.Play(cascadeIndex == 0 ? AudioManager.Instance.normalMatch : AudioManager.Instance.cascade);
+                AudioManager.Instance?.PlayMatch(cascadeIndex);
                 yield return boardView.AnimateBoardSettled();
                 cascadeIndex++;
                 preferred = new BoardCoordinate(-1, -1);
@@ -264,27 +264,16 @@ namespace CharacterMatch3.Board
                     boardView.QueueScorePopup(amount, coordinate);
                     ScoreAwarded?.Invoke(amount, coordinate);
                 },
-                SpecialCreated = (coordinate, kind) =>
+                SpecialCreated = (coordinate, kind, orientation) =>
                 {
-                    boardView.QueueSpecialCreated(coordinate, kind);
+                    boardView.QueueSpecialCreated(coordinate, kind, orientation);
                     HapticsManager.Medium();
                 },
-                SpecialActivated = (coordinate, kind) =>
+                SpecialActivated = (coordinate, kind, orientation) =>
                 {
-                    boardView.QueueSpecialActivated(coordinate, kind);
+                    boardView.QueueSpecialActivated(coordinate, kind, orientation);
                     HapticsManager.Heavy();
-                    if (kind == PieceKind.Line)
-                    {
-                        AudioManager.Instance?.Play(AudioManager.Instance.lineClear);
-                    }
-                    else if (kind == PieceKind.Burst)
-                    {
-                        AudioManager.Instance?.Play(AudioManager.Instance.burst);
-                    }
-                    else if (kind == PieceKind.Rainbow)
-                    {
-                        AudioManager.Instance?.Play(AudioManager.Instance.rainbowActivation);
-                    }
+                    AudioManager.Instance?.PlaySpecial(kind);
                 }
             };
         }
