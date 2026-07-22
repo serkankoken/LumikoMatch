@@ -32,12 +32,29 @@ namespace CharacterMatch3
         [SerializeField] private Sprite meadowGameplayBackgroundSprite;
         [SerializeField] private Sprite beachGameplayBackgroundSprite;
         [SerializeField] private Sprite desertGameplayBackgroundSprite;
+        [Header("Toon effect textures")]
+        [SerializeField] private Texture2D toonSparkleTexture;
+        [SerializeField] private Texture2D toonStarTexture;
+        [SerializeField] private Texture2D toonGlowTexture;
+        [SerializeField] private Texture2D toonRingTexture;
+        [SerializeField] private Texture2D toonLineTexture;
+        [SerializeField] private Texture2D toonConfettiTexture;
+        [SerializeField] private Texture2D toonAuraTexture;
+        [SerializeField] private Texture2D toonPopTexture;
 
         public IReadOnlyList<CharacterSpriteEntry> Entries => entries;
         public IReadOnlyList<CharacterSpecialSpriteEntry> SpecialEntries => specialEntries;
         public Sprite GridCellSprite => gridCellSprite;
         public Sprite SoftCoverSprite => softCoverSprite;
         public Sprite SoftCoverBrokenSprite => softCoverBrokenSprite;
+        public Texture2D ToonSparkleTexture => toonSparkleTexture;
+        public Texture2D ToonStarTexture => toonStarTexture;
+        public Texture2D ToonGlowTexture => toonGlowTexture;
+        public Texture2D ToonRingTexture => toonRingTexture;
+        public Texture2D ToonLineTexture => toonLineTexture;
+        public Texture2D ToonConfettiTexture => toonConfettiTexture;
+        public Texture2D ToonAuraTexture => toonAuraTexture;
+        public Texture2D ToonPopTexture => toonPopTexture;
 
         public void EnsureDefaultEntries()
         {
@@ -157,6 +174,26 @@ namespace CharacterMatch3
             meadowGameplayBackgroundSprite = meadowSprite;
             beachGameplayBackgroundSprite = beachSprite;
             desertGameplayBackgroundSprite = desertSprite;
+        }
+
+        public void SetToonEffectTextures(
+            Texture2D sparkleTexture,
+            Texture2D starTexture,
+            Texture2D glowTexture,
+            Texture2D ringTexture,
+            Texture2D lineTexture,
+            Texture2D confettiTexture,
+            Texture2D auraTexture,
+            Texture2D popTexture)
+        {
+            toonSparkleTexture = sparkleTexture;
+            toonStarTexture = starTexture;
+            toonGlowTexture = glowTexture;
+            toonRingTexture = ringTexture;
+            toonLineTexture = lineTexture;
+            toonConfettiTexture = confettiTexture;
+            toonAuraTexture = auraTexture;
+            toonPopTexture = popTexture;
         }
 
         public Sprite GetGameplayBackgroundSprite(string themeId)

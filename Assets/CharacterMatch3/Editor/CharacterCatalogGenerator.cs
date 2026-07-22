@@ -24,6 +24,14 @@ namespace CharacterMatch3.Editor
         private const string MeadowGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Orman.png";
         private const string BeachGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Sahil.png";
         private const string DesertGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/\u00c7\u00f6l.png";
+        private const string ToonSparkleTexturePath = "Assets/Pack/Epic Toon FX/Textures/sparkle.png";
+        private const string ToonStarTexturePath = "Assets/Pack/Epic Toon FX/Textures/star.png";
+        private const string ToonGlowTexturePath = "Assets/Pack/Epic Toon FX/Textures/glow.png";
+        private const string ToonRingTexturePath = "Assets/Pack/Epic Toon FX/Textures/ring.png";
+        private const string ToonLineTexturePath = "Assets/Pack/Epic Toon FX/Textures/line_sharp.png";
+        private const string ToonConfettiTexturePath = "Assets/Pack/Epic Toon FX/Textures/confetti.png";
+        private const string ToonAuraTexturePath = "Assets/Pack/Epic Toon FX/Textures/aura_slam.png";
+        private const string ToonPopTexturePath = "Assets/Pack/Epic Toon FX/Textures/explosion.png";
 
         [MenuItem("Character Match-3/Create Character Catalog")]
         public static CharacterCatalog CreateOrUpdateCatalogMenu()
@@ -58,6 +66,7 @@ namespace CharacterMatch3.Editor
             AssignSpecialSprites(catalog);
             AssignBoardSprites(catalog);
             AssignGameplayBackgroundSprites(catalog);
+            AssignToonEffectTextures(catalog);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
 
@@ -149,6 +158,19 @@ namespace CharacterMatch3.Editor
             var beach = AssetDatabase.LoadAssetAtPath<Sprite>(BeachGameplayBackgroundSpritePath);
             var desert = AssetDatabase.LoadAssetAtPath<Sprite>(DesertGameplayBackgroundSpritePath);
             catalog.SetGameplayBackgroundSprites(meadow, beach, desert);
+        }
+
+        private static void AssignToonEffectTextures(CharacterCatalog catalog)
+        {
+            var sparkle = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonSparkleTexturePath);
+            var star = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonStarTexturePath);
+            var glow = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonGlowTexturePath);
+            var ring = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonRingTexturePath);
+            var line = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonLineTexturePath);
+            var confetti = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonConfettiTexturePath);
+            var aura = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonAuraTexturePath);
+            var pop = AssetDatabase.LoadAssetAtPath<Texture2D>(ToonPopTexturePath);
+            catalog.SetToonEffectTextures(sparkle, star, glow, ring, line, confetti, aura, pop);
         }
 
         private static bool TryResolveCharacterFromFileName(string path, out CharacterType characterType)

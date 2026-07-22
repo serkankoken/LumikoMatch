@@ -229,7 +229,7 @@ namespace CharacterMatch3.Board
 
             if (valid && toView != null)
             {
-                yield return AnimateTwoPieceSwap(fromView, toView, offset, 0.16f);
+                yield return AnimateTwoPieceSwap(fromView, toView, offset, 0.18f);
             }
             else if (toView != null)
             {
@@ -357,6 +357,11 @@ namespace CharacterMatch3.Board
         private IEnumerator PlayPreRefreshEffects(List<BoardVisualEffect> effects, Dictionary<BoardCoordinate, int> scorePopups)
         {
             EnsureEffectsRoot();
+            if (effects.Count >= 4)
+            {
+                StartCoroutine(AnimateBoardResonance(effects));
+            }
+
             foreach (var effect in effects)
             {
                 StartCoroutine(PlayVisualEffect(effect, false));
@@ -424,15 +429,15 @@ namespace CharacterMatch3.Board
 
                     var previousPosition = GetEffectPosition(previousCoordinate);
                     fromOffset = previousPosition - currentPosition;
-                    duration = Mathf.Clamp(0.18f + fromOffset.magnitude / 1300f, 0.2f, 0.34f);
-                    delay = Mathf.Clamp((model.Height - coordinate.y) * 0.01f, 0f, 0.08f);
+                    duration = Mathf.Clamp(0.2f + fromOffset.magnitude / 1350f, 0.22f, 0.38f);
+                    delay = Mathf.Clamp((model.Height - coordinate.y) * 0.012f, 0f, 0.09f);
                 }
                 else
                 {
                     var offsetY = Mathf.Max(cellSize.y * 0.9f, spawnTopY - currentPosition.y);
                     fromOffset = new Vector2(0f, offsetY);
-                    duration = Mathf.Clamp(0.22f + offsetY / 1900f, 0.24f, 0.36f);
-                    delay = Mathf.Clamp((model.Height - 1 - coordinate.y) * 0.016f, 0f, 0.12f);
+                    duration = Mathf.Clamp(0.24f + offsetY / 1950f, 0.26f, 0.42f);
+                    delay = Mathf.Clamp((model.Height - 1 - coordinate.y) * 0.018f, 0f, 0.14f);
                     fadeIn = true;
                 }
 
@@ -492,19 +497,22 @@ namespace CharacterMatch3.Board
             switch (effect.Type)
             {
                 case BoardVisualEffectType.PieceRemoved:
-                    SpawnBurst(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Rainbow ? 18 : 10, 88f);
+                    SpawnBurst(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Rainbow ? 20 : 12, 92f, effect.PieceKind, 0.4f);
+                    StartCoroutine(AnimateToonRing(effect.Coordinate, effect.Color, 0.28f, 0.45f, 1.08f, 0.18f, false));
+                    StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, false));
                     if (view != null)
                     {
-                        yield return AnimatePiecePop(view, 0.28f);
+                        yield return AnimatePiecePop(view, 0.3f);
                     }
 
                     break;
                 case BoardVisualEffectType.SoftCoverBroken:
-                    SpawnBurst(effect.Coordinate, effect.Color, 9, 58f);
-                    yield return AnimateSoftCoverBreak(effect.Coordinate, effect.Color, 0.32f);
+                    SpawnBurst(effect.Coordinate, effect.Color, 10, 62f, effect.PieceKind, 0.38f);
+                    yield return AnimateSoftCoverBreak(effect.Coordinate, effect.Color, 0.34f);
                     break;
                 case BoardVisualEffectType.BlockerHit:
-                    SpawnBurst(effect.Coordinate, effect.Color, 7, 48f);
+                    SpawnBurst(effect.Coordinate, effect.Color, 8, 52f, effect.PieceKind, 0.32f);
+                    StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, PieceKind.Normal, false));
                     if (view != null)
                     {
                         yield return AnimatePieceShake(view, 0.16f, 12f);
@@ -512,30 +520,38 @@ namespace CharacterMatch3.Board
 
                     break;
                 case BoardVisualEffectType.CompanionDelivered:
-                    SpawnBurst(effect.Coordinate, effect.Color, 18, 108f);
+                    SpawnBurst(effect.Coordinate, effect.Color, 20, 112f, effect.PieceKind, 0.42f);
+                    StartCoroutine(AnimateSparkleHalo(effect.Coordinate, effect.Color, 12, 82f, 0.46f, PieceKind.Companion, false));
+                    StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, PieceKind.Companion, true));
                     if (view != null)
                     {
-                        yield return AnimatePiecePop(view, 0.3f);
+                        yield return AnimatePiecePop(view, 0.32f);
                     }
 
                     break;
                 case BoardVisualEffectType.SpecialActivated:
-                    SpawnBurst(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Rainbow ? 24 : 16, 120f);
+                    SpawnBurst(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Rainbow ? 30 : 20, effect.PieceKind == PieceKind.Rainbow ? 154f : 128f, effect.PieceKind, 0.48f);
+                    StartCoroutine(AnimateToonRing(effect.Coordinate, effect.Color, 0.42f, 0.7f, effect.PieceKind == PieceKind.Rainbow ? 2.45f : 1.75f, 0.34f, false));
+                    StartCoroutine(AnimateSparkleHalo(effect.Coordinate, effect.Color, effect.PieceKind == PieceKind.Rainbow ? 18 : 12, 96f, 0.5f, effect.PieceKind, false));
+                    StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, true));
                     StartCoroutine(AnimateSpecialFlash(effect.Coordinate, effect.Color, effect.PieceKind));
                     if (view != null)
                     {
-                        yield return AnimatePiecePulse(view, 0.22f, 1.22f);
+                        yield return AnimatePiecePulse(view, 0.26f, effect.PieceKind == PieceKind.Rainbow ? 1.32f : 1.24f);
                     }
 
                     break;
                 case BoardVisualEffectType.SpecialCreated:
                     if (afterRefresh)
                     {
-                        SpawnBurst(effect.Coordinate, effect.Color, 14, 64f);
-                        StartCoroutine(AnimateCellFlash(effect.Coordinate, effect.Color, 0.24f, 0.55f, 1.16f));
+                        SpawnBurst(effect.Coordinate, effect.Color, 16, 72f, effect.PieceKind, 0.44f);
+                        StartCoroutine(AnimateToonRing(effect.Coordinate, effect.Color, 0.42f, 1.45f, 0.72f, 0.28f, true));
+                        StartCoroutine(AnimateSparkleHalo(effect.Coordinate, effect.Color, 10, 76f, 0.46f, effect.PieceKind, true));
+                        StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, false));
+                        StartCoroutine(AnimateCellFlash(effect.Coordinate, effect.Color, 0.3f, 0.55f, 1.18f));
                         if (view != null)
                         {
-                            yield return AnimatePieceSpawn(view, 0.24f);
+                            yield return AnimatePieceSpawn(view, 0.3f);
                         }
                     }
 
@@ -664,17 +680,17 @@ namespace CharacterMatch3.Board
             };
         }
 
-        private void SpawnBurst(BoardCoordinate coordinate, Color color, int particleCount, float radius)
+        private void SpawnBurst(BoardCoordinate coordinate, Color color, int particleCount, float radius, PieceKind kind = PieceKind.Normal, float duration = 0.38f)
         {
             if (effectsRoot == null)
             {
                 return;
             }
 
-            StartCoroutine(AnimateBurst(coordinate, color, particleCount, radius, 0.34f));
+            StartCoroutine(AnimateBurst(coordinate, color, particleCount, radius, duration, kind));
         }
 
-        private IEnumerator AnimateBurst(BoardCoordinate coordinate, Color color, int particleCount, float radius, float duration)
+        private IEnumerator AnimateBurst(BoardCoordinate coordinate, Color color, int particleCount, float radius, float duration, PieceKind kind)
         {
             var root = new GameObject("Burst", typeof(RectTransform));
             root.transform.SetParent(effectsRoot, false);
@@ -686,23 +702,24 @@ namespace CharacterMatch3.Board
             rootRect.sizeDelta = Vector2.zero;
 
             var particles = new RectTransform[particleCount];
-            var graphics = new Image[particleCount];
+            var graphics = new Graphic[particleCount];
+            var particleWeights = new float[particleCount];
             for (var i = 0; i < particleCount; i++)
             {
-                var particle = new GameObject($"Particle_{i}", typeof(RectTransform), typeof(Image));
-                particle.transform.SetParent(rootRect, false);
-                var rect = particle.GetComponent<RectTransform>();
+                var texture = GetBurstTexture(kind, i);
+                var graphic = CreateEffectGraphic($"Particle_{i}", rootRect, texture, ShiftColor(color, i));
+                var rect = graphic.rectTransform;
                 rect.anchorMin = new Vector2(0.5f, 0.5f);
                 rect.anchorMax = new Vector2(0.5f, 0.5f);
                 rect.pivot = new Vector2(0.5f, 0.5f);
-                rect.sizeDelta = Vector2.one * Mathf.Lerp(12f, 22f, (i % 3) / 2f);
+                var size = Mathf.Lerp(16f, kind == PieceKind.Rainbow ? 34f : 26f, (i % 4) / 3f);
+                var rectangular = texture != null && (texture == catalog?.ToonConfettiTexture || texture == catalog?.ToonLineTexture);
+                rect.sizeDelta = rectangular ? new Vector2(size * 0.55f, size * 1.55f) : Vector2.one * size;
                 rect.localRotation = Quaternion.Euler(0f, 0f, i * 37f);
 
-                var image = particle.GetComponent<Image>();
-                image.raycastTarget = false;
-                image.color = ShiftColor(color, i);
                 particles[i] = rect;
-                graphics[i] = image;
+                graphics[i] = graphic;
+                particleWeights[i] = Mathf.Lerp(0.52f, 1.08f, ((i * 17) % 11) / 10f);
             }
 
             for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
@@ -714,10 +731,12 @@ namespace CharacterMatch3.Board
                 {
                     var angle = (i / (float)particles.Length) * Mathf.PI * 2f + 0.35f;
                     var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                    var drift = direction * radius * Mathf.Lerp(0.2f, 1f, ((i * 17) % 11) / 10f);
-                    particles[i].anchoredPosition = drift * moveT;
-                    particles[i].localScale = Vector3.one * Mathf.Lerp(1.25f, 0.2f, t);
-                    particles[i].localRotation = Quaternion.Euler(0f, 0f, i * 37f + 220f * t);
+                    var tangent = new Vector2(-direction.y, direction.x);
+                    var drift = direction * radius * particleWeights[i];
+                    var swirl = tangent * radius * 0.12f * Mathf.Sin(t * Mathf.PI) * (i % 2 == 0 ? 1f : -1f);
+                    particles[i].anchoredPosition = drift * moveT + swirl;
+                    particles[i].localScale = Vector3.one * Mathf.Lerp(1.15f, 0.16f, EaseInCubic(t));
+                    particles[i].localRotation = Quaternion.Euler(0f, 0f, i * 37f + Mathf.Lerp(0f, 260f, EaseOutCubic(t)));
                     var particleColor = graphics[i].color;
                     particleColor.a = fade;
                     graphics[i].color = particleColor;
@@ -727,6 +746,329 @@ namespace CharacterMatch3.Board
             }
 
             Destroy(root);
+        }
+
+        private IEnumerator AnimateSparkleHalo(BoardCoordinate coordinate, Color color, int particleCount, float radius, float duration, PieceKind kind, bool inward)
+        {
+            if (effectsRoot == null)
+            {
+                yield break;
+            }
+
+            var root = new GameObject(inward ? "SparkleInhale" : "SparkleHalo", typeof(RectTransform));
+            root.transform.SetParent(effectsRoot, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.anchoredPosition = GetEffectPosition(coordinate);
+            rootRect.sizeDelta = Vector2.zero;
+
+            var particles = new RectTransform[particleCount];
+            var graphics = new Graphic[particleCount];
+            for (var i = 0; i < particleCount; i++)
+            {
+                var texture = GetSparkleTexture(kind, i);
+                var graphic = CreateEffectGraphic($"Sparkle_{i}", rootRect, texture, ShiftColor(color, i + 5));
+                var rect = graphic.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = Vector2.one * Mathf.Lerp(18f, kind == PieceKind.Rainbow ? 38f : 28f, (i % 3) / 2f);
+                particles[i] = rect;
+                graphics[i] = graphic;
+            }
+
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var eased = inward ? EaseInOut(t) : EaseOutCubic(t);
+                var fadeIn = Mathf.Clamp01(t / 0.18f);
+                var fadeOut = 1f - EaseInCubic(Mathf.Clamp01((t - 0.18f) / 0.82f));
+                var alpha = Mathf.Min(fadeIn, fadeOut);
+                for (var i = 0; i < particles.Length; i++)
+                {
+                    var phase = (i / (float)particles.Length) * Mathf.PI * 2f;
+                    var spin = phase + (inward ? -1f : 1f) * t * Mathf.PI * (kind == PieceKind.Rainbow ? 0.72f : 0.42f);
+                    var currentRadius = inward
+                        ? Mathf.Lerp(radius, 10f, eased)
+                        : Mathf.Lerp(radius * 0.24f, radius, eased);
+                    var direction = new Vector2(Mathf.Cos(spin), Mathf.Sin(spin));
+                    particles[i].anchoredPosition = direction * currentRadius;
+                    particles[i].localScale = Vector3.one * Mathf.Lerp(inward ? 1.05f : 0.55f, inward ? 0.24f : 1.1f, eased);
+                    particles[i].localRotation = Quaternion.Euler(0f, 0f, Mathf.Rad2Deg * spin + 180f * t);
+                    var graphicColor = graphics[i].color;
+                    graphicColor.a = alpha * (inward ? 0.82f : 0.9f);
+                    graphics[i].color = graphicColor;
+                }
+
+                yield return null;
+            }
+
+            Destroy(root);
+        }
+
+        private IEnumerator AnimateToonRing(BoardCoordinate coordinate, Color color, float duration, float startScale, float endScale, float peakAlpha, bool inward)
+        {
+            if (effectsRoot == null)
+            {
+                yield break;
+            }
+
+            var texture = GetFirstAvailableTexture(catalog?.ToonRingTexture, catalog?.ToonGlowTexture, catalog?.ToonAuraTexture);
+            var graphic = CreateEffectGraphic(inward ? "ToonInhaleRing" : "ToonRing", effectsRoot, texture, new Color(color.r, color.g, color.b, peakAlpha));
+            var rect = graphic.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = GetEffectPosition(coordinate);
+            rect.sizeDelta = GetEffectCellSize() * 1.22f;
+
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var scale = inward
+                    ? Mathf.Lerp(startScale, endScale, EaseInOut(t))
+                    : Mathf.Lerp(startScale, endScale, EaseOutCubic(t));
+                rect.localScale = Vector3.one * scale;
+                rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, inward ? -68f : 82f, EaseOutCubic(t)));
+                var graphicColor = graphic.color;
+                var fadeOut = inward ? EaseOutCubic(t) : EaseInCubic(t);
+                graphicColor.a = Mathf.Lerp(peakAlpha, 0f, fadeOut);
+                graphic.color = graphicColor;
+                yield return null;
+            }
+
+            Destroy(graphic.gameObject);
+        }
+
+        private IEnumerator AnimatePopImpact(BoardCoordinate coordinate, Color color, PieceKind kind, bool strong)
+        {
+            if (effectsRoot == null)
+            {
+                yield break;
+            }
+
+            var root = new GameObject(strong ? "PopImpactStrong" : "PopImpact", typeof(RectTransform));
+            root.transform.SetParent(effectsRoot, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+
+            var offsetSeed = coordinate.x * 31 + coordinate.y * 17 + (int)kind * 13;
+            var start = GetEffectPosition(coordinate) + new Vector2((offsetSeed % 7 - 3) * 2.5f, 8f + (offsetSeed % 5) * 1.5f);
+            var end = start + new Vector2((offsetSeed % 3 - 1) * 10f, strong ? 42f : 28f);
+            rootRect.anchoredPosition = start;
+            rootRect.sizeDelta = Vector2.zero;
+
+            var cellSize = GetEffectCellSize();
+            var baseScale = strong || kind == PieceKind.Rainbow
+                ? 1.28f
+                : kind == PieceKind.Line || kind == PieceKind.Burst || kind == PieceKind.Companion
+                    ? 1.02f
+                    : 0.74f;
+
+            var glowTexture = GetFirstAvailableTexture(catalog?.ToonGlowTexture, catalog?.ToonAuraTexture);
+            var glow = CreateEffectGraphic("PopGlow", rootRect, glowTexture, new Color(color.r, color.g, color.b, strong ? 0.26f : 0.14f));
+            glow.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            glow.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            glow.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            glow.rectTransform.sizeDelta = cellSize * baseScale * 1.28f;
+
+            var popTexture = GetFirstAvailableTexture(catalog?.ToonPopTexture, catalog?.ToonAuraTexture, catalog?.ToonStarTexture);
+            var popColor = Color.Lerp(Color.white, color, strong ? 0.42f : 0.25f);
+            popColor.a = strong ? 0.96f : 0.78f;
+            var pop = CreateEffectGraphic("PopTexture", rootRect, popTexture, popColor);
+            var popRect = pop.rectTransform;
+            popRect.anchorMin = new Vector2(0.5f, 0.5f);
+            popRect.anchorMax = new Vector2(0.5f, 0.5f);
+            popRect.pivot = new Vector2(0.5f, 0.5f);
+            popRect.sizeDelta = cellSize * baseScale;
+            popRect.localRotation = Quaternion.Euler(0f, 0f, (offsetSeed % 2 == 0 ? -1f : 1f) * Mathf.Lerp(8f, 18f, (offsetSeed % 4) / 3f));
+
+            var duration = strong ? 0.36f : 0.28f;
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var popIn = Mathf.Clamp01(t / 0.42f);
+                var popOut = Mathf.Clamp01((t - 0.22f) / 0.78f);
+                var scale = t < 0.42f
+                    ? Mathf.LerpUnclamped(0.18f, 1.1f, EaseOutBack(popIn))
+                    : Mathf.Lerp(1.1f, 0.72f, EaseInCubic((t - 0.42f) / 0.58f));
+                rootRect.anchoredPosition = Vector2.Lerp(start, end, EaseOutCubic(t));
+                rootRect.localScale = Vector3.one * scale;
+                rootRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, strong ? 7f : 4f, t) * (offsetSeed % 2 == 0 ? 1f : -1f));
+
+                var popGraphicColor = pop.color;
+                popGraphicColor.a = Mathf.Lerp(popColor.a, 0f, EaseInCubic(popOut));
+                pop.color = popGraphicColor;
+
+                var glowColor = glow.color;
+                glowColor.a = Mathf.Lerp(strong ? 0.26f : 0.14f, 0f, EaseInCubic(t));
+                glow.color = glowColor;
+                glow.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.72f, 1.36f, EaseOutCubic(t));
+                yield return null;
+            }
+
+            Destroy(root);
+        }
+
+        private IEnumerator AnimateBoardResonance(List<BoardVisualEffect> effects)
+        {
+            if (effectsRoot == null || effects.Count == 0)
+            {
+                yield break;
+            }
+
+            var center = Vector2.zero;
+            var color = Color.white;
+            foreach (var effect in effects)
+            {
+                center += GetEffectPosition(effect.Coordinate);
+                color = Color.Lerp(color, effect.Color, 0.38f);
+            }
+
+            center /= effects.Count;
+            var texture = GetFirstAvailableTexture(catalog?.ToonGlowTexture, catalog?.ToonAuraTexture, catalog?.ToonRingTexture);
+            var graphic = CreateEffectGraphic("BoardResonance", effectsRoot, texture, new Color(color.r, color.g, color.b, 0.16f));
+            var rect = graphic.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = center;
+            rect.sizeDelta = GetEffectCellSize() * Mathf.Clamp(1.5f + effects.Count * 0.1f, 1.8f, 3.6f);
+
+            const float duration = 0.36f;
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                rect.localScale = Vector3.one * Mathf.Lerp(0.7f, 1.18f, EaseOutCubic(t));
+                rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, 28f, t));
+                var graphicColor = graphic.color;
+                graphicColor.a = Mathf.Lerp(0.16f, 0f, EaseInCubic(t));
+                graphic.color = graphicColor;
+                yield return null;
+            }
+
+            Destroy(graphic.gameObject);
+        }
+
+        private Graphic CreateEffectGraphic(string name, Transform parent, Texture2D texture, Color color)
+        {
+            GameObject effectObject;
+            Graphic graphic;
+            if (texture != null)
+            {
+                effectObject = new GameObject(name, typeof(RectTransform), typeof(RawImage));
+                var rawImage = effectObject.GetComponent<RawImage>();
+                rawImage.texture = texture;
+                rawImage.uvRect = new Rect(0f, 0f, 1f, 1f);
+                graphic = rawImage;
+            }
+            else
+            {
+                effectObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+                graphic = effectObject.GetComponent<Image>();
+            }
+
+            effectObject.transform.SetParent(parent, false);
+            graphic.raycastTarget = false;
+            graphic.color = color;
+            return graphic;
+        }
+
+        private Texture2D GetBurstTexture(PieceKind kind, int index)
+        {
+            if (catalog == null)
+            {
+                return null;
+            }
+
+            var variant = Mathf.Abs(index) % 6;
+            switch (kind)
+            {
+                case PieceKind.Line:
+                    return variant switch
+                    {
+                        0 => GetFirstAvailableTexture(catalog.ToonLineTexture, catalog.ToonSparkleTexture),
+                        1 => GetFirstAvailableTexture(catalog.ToonSparkleTexture, catalog.ToonStarTexture),
+                        _ => GetFirstAvailableTexture(catalog.ToonGlowTexture, catalog.ToonSparkleTexture)
+                    };
+                case PieceKind.Burst:
+                    return variant switch
+                    {
+                        0 => GetFirstAvailableTexture(catalog.ToonAuraTexture, catalog.ToonGlowTexture),
+                        1 => GetFirstAvailableTexture(catalog.ToonStarTexture, catalog.ToonSparkleTexture),
+                        2 => GetFirstAvailableTexture(catalog.ToonSparkleTexture, catalog.ToonStarTexture),
+                        _ => GetFirstAvailableTexture(catalog.ToonGlowTexture, catalog.ToonAuraTexture)
+                    };
+                case PieceKind.Rainbow:
+                    return variant switch
+                    {
+                        0 => GetFirstAvailableTexture(catalog.ToonStarTexture, catalog.ToonSparkleTexture),
+                        1 => GetFirstAvailableTexture(catalog.ToonConfettiTexture, catalog.ToonStarTexture),
+                        2 => GetFirstAvailableTexture(catalog.ToonSparkleTexture, catalog.ToonStarTexture),
+                        3 => GetFirstAvailableTexture(catalog.ToonGlowTexture, catalog.ToonAuraTexture),
+                        _ => GetFirstAvailableTexture(catalog.ToonRingTexture, catalog.ToonGlowTexture)
+                    };
+                case PieceKind.Companion:
+                    return variant % 2 == 0
+                        ? GetFirstAvailableTexture(catalog.ToonStarTexture, catalog.ToonSparkleTexture)
+                        : GetFirstAvailableTexture(catalog.ToonGlowTexture, catalog.ToonSparkleTexture);
+                default:
+                    return variant switch
+                    {
+                        0 => GetFirstAvailableTexture(catalog.ToonSparkleTexture, catalog.ToonStarTexture),
+                        1 => GetFirstAvailableTexture(catalog.ToonStarTexture, catalog.ToonSparkleTexture),
+                        2 => GetFirstAvailableTexture(catalog.ToonConfettiTexture, catalog.ToonSparkleTexture),
+                        _ => GetFirstAvailableTexture(catalog.ToonGlowTexture, catalog.ToonSparkleTexture)
+                    };
+            }
+        }
+
+        private Texture2D GetSparkleTexture(PieceKind kind, int index)
+        {
+            if (catalog == null)
+            {
+                return null;
+            }
+
+            var variant = Mathf.Abs(index) % 4;
+            if (kind == PieceKind.Rainbow)
+            {
+                return variant switch
+                {
+                    0 => GetFirstAvailableTexture(catalog.ToonStarTexture, catalog.ToonSparkleTexture),
+                    1 => GetFirstAvailableTexture(catalog.ToonConfettiTexture, catalog.ToonStarTexture),
+                    2 => GetFirstAvailableTexture(catalog.ToonRingTexture, catalog.ToonGlowTexture),
+                    _ => GetFirstAvailableTexture(catalog.ToonSparkleTexture, catalog.ToonStarTexture)
+                };
+            }
+
+            if (kind == PieceKind.Burst)
+            {
+                return variant == 0
+                    ? GetFirstAvailableTexture(catalog.ToonAuraTexture, catalog.ToonGlowTexture)
+                    : GetFirstAvailableTexture(catalog.ToonSparkleTexture, catalog.ToonStarTexture);
+            }
+
+            return variant == 0
+                ? GetFirstAvailableTexture(catalog.ToonStarTexture, catalog.ToonSparkleTexture)
+                : GetFirstAvailableTexture(catalog.ToonSparkleTexture, catalog.ToonGlowTexture);
+        }
+
+        private static Texture2D GetFirstAvailableTexture(params Texture2D[] textures)
+        {
+            foreach (var texture in textures)
+            {
+                if (texture != null)
+                {
+                    return texture;
+                }
+            }
+
+            return null;
         }
 
         private IEnumerator AnimateSoftCoverBreak(BoardCoordinate coordinate, Color fallbackColor, float duration)
@@ -808,12 +1150,19 @@ namespace CharacterMatch3.Board
         {
             if (kind == PieceKind.Line)
             {
+                StartCoroutine(AnimateBeamSparks(coordinate, color, true));
+                StartCoroutine(AnimateBeamSparks(coordinate, color, false));
                 StartCoroutine(AnimateBeam(coordinate, color, true));
                 yield return AnimateBeam(coordinate, color, false);
                 yield break;
             }
 
             var scale = kind == PieceKind.Rainbow ? 2.6f : 1.8f;
+            if (kind == PieceKind.Rainbow)
+            {
+                StartCoroutine(AnimateToonRing(coordinate, color, 0.38f, 0.36f, 2.15f, 0.24f, false));
+            }
+
             yield return AnimateCellFlash(coordinate, color, 0.28f, 0.8f, scale);
         }
 
@@ -824,9 +1173,9 @@ namespace CharacterMatch3.Board
                 yield break;
             }
 
-            var beam = new GameObject(horizontal ? "HorizontalBeam" : "VerticalBeam", typeof(RectTransform), typeof(Image));
-            beam.transform.SetParent(effectsRoot, false);
-            var rect = beam.GetComponent<RectTransform>();
+            var texture = GetFirstAvailableTexture(catalog?.ToonLineTexture, catalog?.ToonGlowTexture, catalog?.ToonAuraTexture);
+            var graphic = CreateEffectGraphic(horizontal ? "HorizontalBeam" : "VerticalBeam", effectsRoot, texture, new Color(color.r, color.g, color.b, 0.48f));
+            var rect = graphic.rectTransform;
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
@@ -836,11 +1185,7 @@ namespace CharacterMatch3.Board
                 ? new Vector2(boardRoot.rect.width, cellSize.y * 0.42f)
                 : new Vector2(cellSize.x * 0.42f, boardRoot.rect.height);
 
-            var image = beam.GetComponent<Image>();
-            image.raycastTarget = false;
-            image.color = new Color(color.r, color.g, color.b, 0.44f);
-
-            const float duration = 0.22f;
+            const float duration = 0.28f;
             for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
             {
                 var t = Mathf.Clamp01(elapsed / duration);
@@ -848,13 +1193,71 @@ namespace CharacterMatch3.Board
                     ? new Vector3(EaseOutCubic(t), Mathf.Lerp(1f, 0.35f, t), 1f)
                     : new Vector3(Mathf.Lerp(1f, 0.35f, t), EaseOutCubic(t), 1f);
                 rect.localScale = widthScale;
-                var beamColor = image.color;
-                beamColor.a = Mathf.Lerp(0.44f, 0f, EaseInCubic(t));
-                image.color = beamColor;
+                var beamColor = graphic.color;
+                beamColor.a = Mathf.Lerp(0.48f, 0f, EaseInCubic(t));
+                graphic.color = beamColor;
                 yield return null;
             }
 
-            Destroy(beam);
+            Destroy(graphic.gameObject);
+        }
+
+        private IEnumerator AnimateBeamSparks(BoardCoordinate coordinate, Color color, bool horizontal)
+        {
+            if (effectsRoot == null)
+            {
+                yield break;
+            }
+
+            var root = new GameObject(horizontal ? "HorizontalBeamSparks" : "VerticalBeamSparks", typeof(RectTransform));
+            root.transform.SetParent(effectsRoot, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.anchoredPosition = GetEffectPosition(coordinate);
+
+            const int particleCount = 8;
+            var axis = horizontal ? Vector2.right : Vector2.up;
+            var perpendicular = horizontal ? Vector2.up : Vector2.right;
+            var halfLength = horizontal ? boardRoot.rect.width * 0.5f : boardRoot.rect.height * 0.5f;
+            var particles = new RectTransform[particleCount];
+            var graphics = new Graphic[particleCount];
+
+            for (var i = 0; i < particleCount; i++)
+            {
+                var graphic = CreateEffectGraphic($"BeamSpark_{i}", rootRect, GetSparkleTexture(PieceKind.Line, i), ShiftColor(color, i));
+                var rect = graphic.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = Vector2.one * Mathf.Lerp(18f, 28f, (i % 3) / 2f);
+                particles[i] = rect;
+                graphics[i] = graphic;
+            }
+
+            const float duration = 0.32f;
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                var eased = EaseOutCubic(t);
+                for (var i = 0; i < particleCount; i++)
+                {
+                    var side = i % 2 == 0 ? 1f : -1f;
+                    var lane = (i / 2 + 1) / 4f;
+                    var wobble = Mathf.Sin((t + i * 0.13f) * Mathf.PI) * 14f;
+                    particles[i].anchoredPosition = axis * side * Mathf.Lerp(16f, halfLength * lane, eased) + perpendicular * wobble;
+                    particles[i].localScale = Vector3.one * Mathf.Lerp(0.62f, 0.18f, EaseInCubic(t));
+                    particles[i].localRotation = Quaternion.Euler(0f, 0f, i * 41f + 220f * t);
+                    var graphicColor = graphics[i].color;
+                    graphicColor.a = Mathf.Lerp(0.85f, 0f, EaseInCubic(t));
+                    graphics[i].color = graphicColor;
+                }
+
+                yield return null;
+            }
+
+            Destroy(root);
         }
 
         private IEnumerator AnimateScorePopup(BoardCoordinate coordinate, int amount)

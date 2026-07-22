@@ -115,3 +115,11 @@ MonoBehaviour:
   meadowGameplayBackgroundSprite: {fileID: 21300000, guid: bff35e6b7ffecab459516318f2124c72, type: 3}
   beachGameplayBackgroundSprite: {fileID: 21300000, guid: b7d0f49b86113934cb9e12f02ff48bc4, type: 3}
   desertGameplayBackgroundSprite: {fileID: 21300000, guid: 30d6aa7a7a14b4c4a8ae901284e62ad0, type: 3}
+  toonSparkleTexture: {fileID: 2800000, guid: 42c6cbafef4b45440b6e298646aa1ec5, type: 3}
+  toonStarTexture: {fileID: 2800000, guid: 93f8abb6df8f9f348910ec6328660560, type: 3}
+  toonGlowTexture: {fileID: 2800000, guid: 75c822b01a637d547abc69e6f1f590b4, type: 3}
+  toonRingTexture: {fileID: 2800000, guid: a4280d58393322842afb10bcbcfc2a83, type: 3}
+  toonLineTexture: {fileID: 2800000, guid: 7d59ae2be6260054db426fe96a2f217d, type: 3}
+  toonConfettiTexture: {fileID: 2800000, guid: fc889383b2da2db439ea6a25ba1b4f9b, type: 3}
+  toonAuraTexture: {fileID: 2800000, guid: f49e22d051dd27a429c90269e9bdf852, type: 3}
+  toonPopTexture: {fileID: 2800000, guid: 43cc8e40a0012354982a74cadd9a22df, type: 3}
