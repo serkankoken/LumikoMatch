@@ -111,9 +111,15 @@ namespace CharacterMatch3.Board
             blockerLabel.text = string.Empty;
             if (cell.CrateLayers > 0)
             {
-                pieceImage.enabled = false;
+                var crateSprite = catalog != null ? catalog.CrateBlockSprite : null;
+                pieceImage.enabled = crateSprite != null;
+                pieceImage.sprite = crateSprite;
+                pieceImage.color = crateSprite != null ? Color.white : Color.clear;
                 pieceLabel.text = string.Empty;
-                blockerLabel.text = cell.CrateLayers > 1 ? "CR2" : "CR";
+                blockerLabel.text = crateSprite != null
+                    ? (cell.CrateLayers > 1 ? cell.CrateLayers.ToString() : string.Empty)
+                    : (cell.CrateLayers > 1 ? "CR2" : "CR");
+                ApplyPieceVisualTransform();
                 return;
             }
 

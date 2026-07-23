@@ -9,6 +9,10 @@ namespace CharacterMatch3.Board
 {
     public sealed class BoardView : MonoBehaviour
     {
+        private const float CandyTextDuration = 0.86f;
+        private const float CandyTextRise = 106f;
+        private const float CandyTextSideDrift = 18f;
+
         [SerializeField] private RectTransform boardRoot;
         [Header("Input")]
         [SerializeField] private Match3InputSettings inputSettings;
@@ -33,6 +37,7 @@ namespace CharacterMatch3.Board
         {
             PieceRemoved,
             SoftCoverBroken,
+            CrateDamaged,
             BlockerHit,
             SpecialCreated,
             SpecialActivated,
@@ -182,6 +187,11 @@ namespace CharacterMatch3.Board
         public void QueueBlockerHit(BoardCoordinate coordinate)
         {
             pendingPreRefreshEffects.Add(new BoardVisualEffect(BoardVisualEffectType.BlockerHit, coordinate, new Color(1f, 0.82f, 0.34f)));
+        }
+
+        public void QueueCrateDamaged(BoardCoordinate coordinate)
+        {
+            pendingPreRefreshEffects.Add(new BoardVisualEffect(BoardVisualEffectType.CrateDamaged, coordinate, new Color(1f, 0.64f, 0.22f)));
         }
 
         public void QueueSoftCoverRemoved(BoardCoordinate coordinate)
@@ -520,6 +530,16 @@ namespace CharacterMatch3.Board
                     SpawnBurst(effect.Coordinate, effect.Color, 10, 62f, effect.PieceKind, 0.38f);
                     yield return AnimateSoftCoverBreak(effect.Coordinate, effect.Color, 0.34f);
                     break;
+                case BoardVisualEffectType.CrateDamaged:
+                    SpawnBurst(effect.Coordinate, effect.Color, 16, 86f, effect.PieceKind, 0.42f);
+                    StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, PieceKind.Normal, false));
+                    StartCoroutine(AnimateCrateBreak(effect.Coordinate, effect.Color, 0.58f));
+                    if (view != null)
+                    {
+                        yield return AnimatePieceShake(view, 0.22f, 18f);
+                    }
+
+                    break;
                 case BoardVisualEffectType.BlockerHit:
                     SpawnBurst(effect.Coordinate, effect.Color, 8, 52f, effect.PieceKind, 0.32f);
                     StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, PieceKind.Normal, false));
@@ -533,6 +553,7 @@ namespace CharacterMatch3.Board
                     SpawnBurst(effect.Coordinate, effect.Color, 20, 112f, effect.PieceKind, 0.42f);
                     StartCoroutine(AnimateSparkleHalo(effect.Coordinate, effect.Color, 12, 82f, 0.46f, PieceKind.Companion, false));
                     StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, PieceKind.Companion, true));
+                    StartCoroutine(AnimateCandyTextPopup(effect.Coordinate, "SAVED!", effect.Color, 0.03f));
                     if (view != null)
                     {
                         yield return AnimatePiecePop(view, 0.32f);
@@ -547,6 +568,7 @@ namespace CharacterMatch3.Board
                     StartCoroutine(AnimateExplosionRound(effect.Coordinate, effect.Color, effect.PieceKind, effect.PieceKind == PieceKind.Burst ? 1.64f : 1.12f, effect.PieceKind == PieceKind.Burst ? 0.42f : 0.34f));
                     StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, true));
                     StartCoroutine(AnimateSpecialFlash(effect.Coordinate, effect.Color, effect.PieceKind, effect.LineOrientation));
+                    StartCoroutine(AnimateCandyTextPopup(effect.Coordinate, GetSpecialActivatedText(effect.PieceKind), GetCandyTextColor(effect.PieceKind), 0.02f));
                     if (view != null)
                     {
                         yield return AnimatePiecePulse(view, 0.28f, effect.PieceKind == PieceKind.Rainbow ? 1.36f : effect.PieceKind == PieceKind.Burst ? 1.3f : 1.24f);
@@ -567,6 +589,7 @@ namespace CharacterMatch3.Board
                         StartCoroutine(AnimateSparkleHalo(effect.Coordinate, effect.Color, 10, 76f, 0.46f, effect.PieceKind, true));
                         StartCoroutine(AnimatePopImpact(effect.Coordinate, effect.Color, effect.PieceKind, false));
                         StartCoroutine(AnimateCellFlash(effect.Coordinate, effect.Color, 0.3f, 0.55f, 1.18f));
+                        StartCoroutine(AnimateCandyTextPopup(effect.Coordinate, GetSpecialCreatedText(effect.PieceKind), GetCandyTextColor(effect.PieceKind), 0.04f));
                         if (view != null)
                         {
                             yield return AnimatePieceSpawn(view, 0.3f);
@@ -1584,6 +1607,130 @@ namespace CharacterMatch3.Board
             Destroy(overlay);
         }
 
+        private IEnumerator AnimateCrateBreak(BoardCoordinate coordinate, Color fallbackColor, float duration)
+        {
+            if (effectsRoot == null)
+            {
+                yield break;
+            }
+
+            var brokenSprite = catalog != null ? catalog.CrateBlockBrokenSprite : null;
+            var shardSprite = catalog != null ? catalog.CrateWoodShardSprite : null;
+            if (brokenSprite == null && shardSprite == null)
+            {
+                yield return AnimateCellFlash(coordinate, fallbackColor, duration, 0.92f, 1.16f);
+                yield break;
+            }
+
+            duration = Mathf.Max(0.48f, duration);
+            var center = GetEffectPosition(coordinate);
+            var cellSize = GetEffectCellSize();
+            var rootObject = new GameObject("CrateBreak", typeof(RectTransform));
+            rootObject.transform.SetParent(effectsRoot, false);
+
+            var rect = rootObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = center;
+            rect.sizeDelta = cellSize;
+
+            Image crackImage = null;
+            RectTransform crackRect = null;
+            if (brokenSprite != null)
+            {
+                var crackObject = new GameObject("CrateCrackFlash", typeof(RectTransform), typeof(Image));
+                crackObject.transform.SetParent(rect, false);
+                crackRect = crackObject.GetComponent<RectTransform>();
+                crackRect.anchorMin = new Vector2(0.5f, 0.5f);
+                crackRect.anchorMax = new Vector2(0.5f, 0.5f);
+                crackRect.pivot = new Vector2(0.5f, 0.5f);
+                crackRect.sizeDelta = cellSize * 1.08f;
+
+                crackImage = crackObject.GetComponent<Image>();
+                crackImage.sprite = brokenSprite;
+                crackImage.preserveAspect = true;
+                crackImage.raycastTarget = false;
+            }
+
+            var sprite = shardSprite != null ? shardSprite : brokenSprite;
+            var shardCount = shardSprite != null ? 9 : 6;
+            var shardRects = new RectTransform[shardCount];
+            var shardImages = new Image[shardCount];
+            var startOffsets = new[]
+            {
+                new Vector2(-0.28f, 0.16f),
+                new Vector2(0f, 0.2f),
+                new Vector2(0.24f, 0.13f),
+                new Vector2(-0.2f, -0.02f),
+                new Vector2(0.06f, -0.03f),
+                new Vector2(0.27f, -0.08f),
+                new Vector2(-0.1f, -0.2f),
+                new Vector2(0.17f, -0.19f),
+                new Vector2(-0.34f, -0.12f)
+            };
+            var sideDrifts = new[] { -0.74f, -0.28f, 0.62f, -0.52f, 0.14f, 0.78f, -0.26f, 0.48f, -0.86f };
+            var liftAmounts = new[] { 0.26f, 0.35f, 0.22f, 0.18f, 0.28f, 0.16f, 0.1f, 0.2f, 0.12f };
+            var fallAmounts = new[] { 0.62f, 0.74f, 0.58f, 0.82f, 0.68f, 0.9f, 0.86f, 0.78f, 0.72f };
+            var spinAmounts = new[] { -210f, 176f, 238f, -154f, 118f, 286f, -260f, 196f, -318f };
+            var startRotations = new[] { -28f, 8f, 24f, -12f, 36f, -38f, 18f, -24f, 42f };
+
+            for (var i = 0; i < shardCount; i++)
+            {
+                var shardObject = new GameObject("CrateWoodShard", typeof(RectTransform), typeof(Image));
+                shardObject.transform.SetParent(rect, false);
+                shardRects[i] = shardObject.GetComponent<RectTransform>();
+                shardRects[i].anchorMin = new Vector2(0.5f, 0.5f);
+                shardRects[i].anchorMax = new Vector2(0.5f, 0.5f);
+                shardRects[i].pivot = new Vector2(0.5f, 0.5f);
+                shardRects[i].sizeDelta = new Vector2(cellSize.x * (0.23f + i % 3 * 0.07f), cellSize.y * (0.12f + i % 2 * 0.04f));
+
+                shardImages[i] = shardObject.GetComponent<Image>();
+                shardImages[i].sprite = sprite;
+                shardImages[i].preserveAspect = true;
+                shardImages[i].raycastTarget = false;
+                shardImages[i].color = Color.white;
+            }
+
+            for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / duration);
+                rect.localScale = Vector3.one * Mathf.Lerp(0.98f, 1.04f, EaseOutCubic(Mathf.Clamp01(t / 0.22f)));
+
+                if (crackImage != null)
+                {
+                    var flashT = Mathf.Clamp01(t / 0.24f);
+                    var flashAlpha = Mathf.Lerp(0.9f, 0f, EaseInCubic(flashT));
+                    crackRect.localScale = Vector3.one * Mathf.LerpUnclamped(0.86f, 1.18f, EaseOutBack(flashT));
+                    crackRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * Mathf.PI * 8f) * 3.5f * (1f - flashT));
+                    crackImage.color = new Color(1f, 1f, 1f, flashAlpha);
+                }
+
+                var launchT = EaseOutCubic(Mathf.Clamp01(t / 0.72f));
+                var fallT = EaseInCubic(t);
+                var fadeT = EaseInCubic(Mathf.Clamp01((t - 0.46f) / 0.54f));
+                var alpha = Mathf.Lerp(1f, 0f, fadeT);
+                for (var i = 0; i < shardCount; i++)
+                {
+                    var start = new Vector2(startOffsets[i].x * cellSize.x, startOffsets[i].y * cellSize.y);
+                    var drift = new Vector2(
+                        sideDrifts[i] * cellSize.x * launchT,
+                        Mathf.Sin(t * Mathf.PI) * liftAmounts[i] * cellSize.y - fallAmounts[i] * cellSize.y * fallT);
+                    var scaleDown = Mathf.Lerp(1f, 0.72f, fadeT);
+                    var popScale = Mathf.LerpUnclamped(0.58f, 1f, EaseOutBack(Mathf.Clamp01(t / 0.18f)));
+
+                    shardRects[i].anchoredPosition = start + drift;
+                    shardRects[i].localRotation = Quaternion.Euler(0f, 0f, startRotations[i] + spinAmounts[i] * EaseOutCubic(t));
+                    shardRects[i].localScale = Vector3.one * popScale * scaleDown;
+                    shardImages[i].color = new Color(1f, 1f, 1f, alpha);
+                }
+
+                yield return null;
+            }
+
+            Destroy(rootObject);
+        }
+
         private IEnumerator AnimateCellFlash(BoardCoordinate coordinate, Color color, float duration, float startScale, float endScale)
         {
             if (effectsRoot == null)
@@ -1742,22 +1889,26 @@ namespace CharacterMatch3.Board
                 yield break;
             }
 
-            var label = UIFactory.CreateText("ScorePopup", effectsRoot, $"+{amount}", 30, TextAnchor.MiddleCenter, new Color(1f, 0.98f, 0.7f));
+            var scoreColor = GetScorePopupColor(amount);
+            var label = UIFactory.CreateText("ScorePopup", effectsRoot, $"+{amount}", amount >= 500 ? 38 : 32, TextAnchor.MiddleCenter, scoreColor);
             label.raycastTarget = false;
+            StyleCandyText(label, scoreColor, amount >= 500 ? 38 : 32, new Vector2(2.2f, -2.2f));
             var rect = label.rectTransform;
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(150f, 54f);
+            rect.sizeDelta = new Vector2(amount >= 500 ? 190f : 150f, amount >= 500 ? 62f : 54f);
             var start = GetEffectPosition(coordinate) + new Vector2(0f, 18f);
-            var end = start + new Vector2(0f, 74f);
+            var drift = ((coordinate.x + coordinate.y) & 1) == 0 ? 10f : -10f;
+            var end = start + new Vector2(drift, amount >= 500 ? 88f : 74f);
 
             const float duration = 0.52f;
             for (var elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
             {
                 var t = Mathf.Clamp01(elapsed / duration);
                 rect.anchoredPosition = Vector2.Lerp(start, end, EaseOutCubic(t));
-                rect.localScale = Vector3.one * Mathf.Lerp(0.78f, 1.08f, EaseOutBack(Mathf.Clamp01(t * 1.35f)));
+                rect.localScale = Vector3.one * Mathf.Lerp(0.72f, amount >= 500 ? 1.18f : 1.08f, EaseOutBack(Mathf.Clamp01(t * 1.35f)));
+                rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * Mathf.PI) * drift * 0.12f);
                 var color = label.color;
                 color.a = t < 0.25f ? 1f : Mathf.Lerp(1f, 0f, (t - 0.25f) / 0.75f);
                 label.color = color;
@@ -1765,6 +1916,160 @@ namespace CharacterMatch3.Board
             }
 
             Destroy(label.gameObject);
+        }
+
+        private IEnumerator AnimateCandyTextPopup(BoardCoordinate coordinate, string message, Color accent, float delay)
+        {
+            if (effectsRoot == null || string.IsNullOrEmpty(message))
+            {
+                yield break;
+            }
+
+            if (delay > 0f)
+            {
+                yield return WaitUnscaled(delay);
+            }
+
+            var root = new GameObject("CandyTextPopup", typeof(RectTransform), typeof(CanvasGroup));
+            root.transform.SetParent(effectsRoot, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.sizeDelta = new Vector2(310f, 100f);
+
+            var group = root.GetComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+
+            var glowColor = new Color(accent.r, accent.g, accent.b, 0.28f);
+            var glow = CreateEffectGraphic("CandyTextGlow", rootRect, GetFirstAvailableTexture(catalog?.ToonGlowTexture, catalog?.ToonAuraTexture, catalog?.ToonRingTexture), glowColor);
+            var glowRect = glow.rectTransform;
+            glowRect.anchorMin = new Vector2(0.5f, 0.5f);
+            glowRect.anchorMax = new Vector2(0.5f, 0.5f);
+            glowRect.pivot = new Vector2(0.5f, 0.5f);
+            glowRect.anchoredPosition = Vector2.zero;
+            glowRect.sizeDelta = new Vector2(280f, 86f);
+            glow.raycastTarget = false;
+
+            var labelColor = Color.Lerp(Color.white, accent, 0.18f);
+            labelColor.a = 1f;
+            var label = UIFactory.CreateText("CandyText", rootRect, message, 48, TextAnchor.MiddleCenter, labelColor);
+            label.raycastTarget = false;
+            StyleCandyText(label, accent, 48, new Vector2(3.8f, -4.2f));
+            UIFactory.Stretch(label.rectTransform);
+
+            var basePosition = GetEffectPosition(coordinate) + new Vector2(0f, 38f);
+            var driftDirection = ((coordinate.x + coordinate.y) & 1) == 0 ? 1f : -1f;
+            var startRotation = driftDirection * -5f;
+            var endRotation = driftDirection * 4f;
+
+            for (var elapsed = 0f; elapsed < CandyTextDuration; elapsed += Time.unscaledDeltaTime)
+            {
+                var t = Mathf.Clamp01(elapsed / CandyTextDuration);
+                var popT = Mathf.Clamp01(t / 0.28f);
+                var settleT = Mathf.Clamp01((t - 0.28f) / 0.72f);
+                var fadeT = Mathf.Clamp01((t - 0.56f) / 0.44f);
+                var rise = Mathf.Lerp(0f, CandyTextRise, EaseOutCubic(t));
+                var side = Mathf.Sin(t * Mathf.PI) * CandyTextSideDrift * driftDirection;
+
+                rootRect.anchoredPosition = basePosition + new Vector2(side, rise);
+                rootRect.localScale = Vector3.one * Mathf.Lerp(
+                    Mathf.Lerp(0.36f, 1.18f, EaseOutBack(popT)),
+                    0.88f,
+                    EaseInCubic(settleT));
+                rootRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(startRotation, endRotation, EaseInOut(t)));
+                group.alpha = fadeT <= 0f ? 1f : Mathf.Lerp(1f, 0f, EaseInCubic(fadeT));
+
+                var glowFade = Mathf.Lerp(0.28f, 0f, EaseInCubic(Mathf.Clamp01((t - 0.18f) / 0.82f)));
+                glow.color = new Color(accent.r, accent.g, accent.b, glowFade);
+                glowRect.localScale = Vector3.one * Mathf.Lerp(0.88f, 1.42f, EaseOutCubic(t));
+                yield return null;
+            }
+
+            Destroy(root);
+        }
+
+        private static string GetSpecialCreatedText(PieceKind kind)
+        {
+            return kind switch
+            {
+                PieceKind.Line => "SWEET!",
+                PieceKind.Burst => "TASTY!",
+                PieceKind.Rainbow => "DELICIOUS!",
+                _ => "NICE!"
+            };
+        }
+
+        private static string GetSpecialActivatedText(PieceKind kind)
+        {
+            return kind switch
+            {
+                PieceKind.Line => "LINE BLAST!",
+                PieceKind.Burst => "BOOM!",
+                PieceKind.Rainbow => "DIVINE!",
+                _ => "POP!"
+            };
+        }
+
+        private static Color GetCandyTextColor(PieceKind kind)
+        {
+            return kind switch
+            {
+                PieceKind.Line => new Color(0.34f, 0.92f, 1f),
+                PieceKind.Burst => new Color(1f, 0.5f, 0.2f),
+                PieceKind.Rainbow => new Color(1f, 0.78f, 0.16f),
+                PieceKind.Companion => new Color(1f, 0.9f, 0.3f),
+                _ => new Color(1f, 0.95f, 0.38f)
+            };
+        }
+
+        private static Color GetScorePopupColor(int amount)
+        {
+            if (amount >= 1000)
+            {
+                return new Color(1f, 0.8f, 0.2f);
+            }
+
+            if (amount >= 300)
+            {
+                return new Color(1f, 0.55f, 0.95f);
+            }
+
+            if (amount >= 240)
+            {
+                return new Color(1f, 0.62f, 0.24f);
+            }
+
+            if (amount >= 120)
+            {
+                return new Color(0.48f, 0.95f, 1f);
+            }
+
+            return new Color(1f, 0.98f, 0.7f);
+        }
+
+        private static void StyleCandyText(Text label, Color accent, int maxSize, Vector2 shadowOffset)
+        {
+            label.fontStyle = FontStyle.BoldAndItalic;
+            label.resizeTextForBestFit = true;
+            label.resizeTextMinSize = Mathf.Max(16, maxSize / 2);
+            label.resizeTextMaxSize = maxSize;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
+            label.supportRichText = false;
+
+            var shadow = label.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0.18f, 0.07f, 0.12f, 0.68f);
+            shadow.effectDistance = shadowOffset;
+            shadow.useGraphicAlpha = true;
+
+            var outline = label.gameObject.AddComponent<Outline>();
+            var outlineColor = Color.Lerp(new Color(0.22f, 0.08f, 0.14f, 1f), accent, 0.18f);
+            outlineColor.a = 0.92f;
+            outline.effectColor = outlineColor;
+            outline.effectDistance = new Vector2(2.8f, -2.8f);
+            outline.useGraphicAlpha = true;
         }
 
         private static IEnumerator AnimateTwoPieceSwap(BoardCellView fromView, BoardCellView toView, Vector2 offset, float duration)

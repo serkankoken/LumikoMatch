@@ -29,6 +29,9 @@ namespace CharacterMatch3
         [SerializeField] private Sprite gridCellSprite;
         [SerializeField] private Sprite softCoverSprite;
         [SerializeField] private Sprite softCoverBrokenSprite;
+        [SerializeField] private Sprite crateBlockSprite;
+        [SerializeField] private Sprite crateBlockBrokenSprite;
+        [SerializeField] private Sprite crateWoodShardSprite;
         [SerializeField] private Sprite meadowGameplayBackgroundSprite;
         [SerializeField] private Sprite beachGameplayBackgroundSprite;
         [SerializeField] private Sprite desertGameplayBackgroundSprite;
@@ -48,6 +51,9 @@ namespace CharacterMatch3
         public Sprite GridCellSprite => gridCellSprite;
         public Sprite SoftCoverSprite => softCoverSprite;
         public Sprite SoftCoverBrokenSprite => softCoverBrokenSprite;
+        public Sprite CrateBlockSprite => crateBlockSprite;
+        public Sprite CrateBlockBrokenSprite => crateBlockBrokenSprite;
+        public Sprite CrateWoodShardSprite => crateWoodShardSprite;
         public Texture2D ToonSparkleTexture => toonSparkleTexture;
         public Texture2D ToonStarTexture => toonStarTexture;
         public Texture2D ToonGlowTexture => toonGlowTexture;

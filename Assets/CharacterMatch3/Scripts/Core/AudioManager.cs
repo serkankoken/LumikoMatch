@@ -17,6 +17,7 @@ namespace CharacterMatch3.Core
         public AudioClip burst;
         public AudioClip rainbowActivation;
         public AudioClip blockerBreak;
+        public AudioClip crateBreak;
         public AudioClip tokenDelivered;
         public AudioClip win;
         public AudioClip lose;
@@ -81,6 +82,11 @@ namespace CharacterMatch3.Core
             }
         }
 
+        public void PlayCrateBreak()
+        {
+            Play(crateBreak != null ? crateBreak : blockerBreak, Mathf.Clamp01(feedbackVolume * 1.14f), 0.88f - pitchJitter, 1.02f + pitchJitter);
+        }
+
         public void Play(AudioClip clip, float volume, float minPitch, float maxPitch)
         {
             if (clip == null || source == null || !CharacterMatch3.Save.SaveManager.Data.soundEnabled)
@@ -139,6 +145,11 @@ namespace CharacterMatch3.Core
             if (blockerBreak == null)
             {
                 blockerBreak = CreateCrackClip("Generated Blocker Crack", 0.15f);
+            }
+
+            if (crateBreak == null)
+            {
+                crateBreak = CreateWoodBreakClip("Generated Wood Break", 0.24f);
             }
 
             if (tokenDelivered == null)
@@ -271,6 +282,20 @@ namespace CharacterMatch3.Core
                 var crack = Noise(sampleIndex * 7 + 11) * 0.3f * Mathf.Pow(1f - normalizedTime, 2.6f);
                 var body = Sine(Mathf.Lerp(240f, 120f, normalizedTime), time) * 0.22f;
                 return (crack + body) * envelope;
+            });
+        }
+
+        private static AudioClip CreateWoodBreakClip(string clipName, float duration)
+        {
+            return CreateGeneratedClip(clipName, duration, (time, normalizedTime, sampleIndex) =>
+            {
+                var envelope = Envelope(normalizedTime, 0.01f, 0.46f);
+                var snap = Noise(sampleIndex * 17 + 3) * 0.58f * Mathf.Pow(1f - normalizedTime, 4.1f);
+                var splinterWindow = Mathf.Clamp01(1f - Mathf.Abs(normalizedTime - 0.16f) * 5.5f);
+                var splinters = Noise(sampleIndex * 31 + 19) * 0.24f * Mathf.Pow(splinterWindow, 1.4f);
+                var body = Sine(Mathf.Lerp(210f, 78f, EaseOutCubic(normalizedTime)), time) * 0.3f * Mathf.Pow(1f - normalizedTime, 1.2f);
+                var debris = Noise(sampleIndex * 5 + 101) * 0.13f * Mathf.Sin(Mathf.Clamp01((normalizedTime - 0.08f) / 0.92f) * Mathf.PI) * Mathf.Pow(1f - normalizedTime, 0.9f);
+                return (snap + splinters + body + debris) * envelope;
             });
         }
 

@@ -241,9 +241,9 @@ namespace CharacterMatch3.Board
                 },
                 CrateLayerRemoved = coordinate =>
                 {
-                    boardView.QueueBlockerHit(coordinate);
+                    boardView.QueueCrateDamaged(coordinate);
                     CrateLayerRemoved?.Invoke(coordinate);
-                    AudioManager.Instance?.Play(AudioManager.Instance.blockerBreak);
+                    AudioManager.Instance?.PlayCrateBreak();
                     HapticsManager.Medium();
                 },
                 LockLayerRemoved = coordinate =>
