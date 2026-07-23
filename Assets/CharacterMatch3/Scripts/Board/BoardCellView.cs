@@ -12,6 +12,11 @@ namespace CharacterMatch3.Board
         private const float BearSpecialInset = -18f;
         private const float OtherSpecialInset = 2f;
         private const float GridSpriteOverscan = 38f;
+        private const float IdleBobAmplitude = 3.2f;
+        private const float IdleSwayAmplitude = 0.65f;
+        private const float IdleSquashAmplitude = 0.014f;
+        private const float IdleTiltAmplitude = 1.65f;
+        private const float IdleAngularSpeed = 2.35f;
         private static readonly Color InactiveCellColor = new Color(0f, 0f, 0f, 0.06f);
         private static readonly Color ActiveCellColor = new Color(1f, 1f, 1f, 0.16f);
         private static readonly Color SelectedCellColor = new Color(1f, 0.93f, 0.35f, 0.95f);
@@ -28,7 +33,16 @@ namespace CharacterMatch3.Board
         private Text pieceLabel;
         private Text blockerLabel;
         private bool usingSpecialSprite;
+        private bool pieceIdleEnabled;
         private CharacterType currentPieceCharacter;
+        private PieceKind currentPieceKind;
+        private Vector2 effectPieceOffset = Vector2.zero;
+        private Vector2 idlePieceOffset = Vector2.zero;
+        private Vector3 idlePieceScale = Vector3.one;
+        private Quaternion idlePieceRotation = Quaternion.identity;
+        private float effectPieceScale = 1f;
+        private float effectPieceAlpha = 1f;
+        private float idlePhase;
         private Vector2 pointerDownPosition;
         private float pointerDownTime;
         private int activePointerId = NoPointerId;
@@ -49,7 +63,9 @@ namespace CharacterMatch3.Board
         {
             EnsureVisuals();
             usingSpecialSprite = false;
+            DisableIdleMotion();
             currentPieceCharacter = CharacterType.Cat;
+            currentPieceKind = PieceKind.Normal;
             ResetPieceVisualState();
 
             if (cell == null || !cell.Active)
@@ -108,20 +124,26 @@ namespace CharacterMatch3.Board
             }
             else if (cell.Piece.Kind == PieceKind.Companion)
             {
+                currentPieceKind = cell.Piece.Kind;
+                currentPieceCharacter = cell.Piece.Character;
+                EnableIdleMotion(cell.Piece);
                 pieceImage.enabled = true;
                 pieceImage.sprite = null;
                 pieceImage.color = new Color(1f, 0.92f, 0.4f);
                 pieceLabel.text = string.Empty;
+                ApplyPieceVisualTransform();
             }
             else
             {
                 pieceImage.enabled = true;
+                currentPieceKind = cell.Piece.Kind;
                 var specialSprite = catalog != null
                     ? catalog.GetSpecialSprite(cell.Piece.Character, cell.Piece.Kind, cell.Piece.LineOrientation)
                     : null;
                 usingSpecialSprite = specialSprite != null;
                 currentPieceCharacter = cell.Piece.Character;
                 ApplyPieceBounds(usingSpecialSprite);
+                EnableIdleMotion(cell.Piece);
                 pieceImage.sprite = specialSprite != null
                     ? specialSprite
                     : catalog != null
@@ -137,6 +159,8 @@ namespace CharacterMatch3.Board
                 {
                     ConfigureSpecialOverlay(cell.Piece);
                 }
+
+                ApplyPieceVisualTransform();
             }
 
             if (cell.LockLayers > 0)
@@ -147,6 +171,16 @@ namespace CharacterMatch3.Board
             {
                 blockerLabel.text = "EXIT";
             }
+        }
+
+        private void Update()
+        {
+            if (!pieceIdleEnabled)
+            {
+                return;
+            }
+
+            UpdateIdleMotion(Time.unscaledTime);
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -193,40 +227,32 @@ namespace CharacterMatch3.Board
         public void SetPieceOffset(Vector2 offset)
         {
             EnsureVisuals();
-            pieceImage.rectTransform.anchoredPosition = offset;
-            specialOverlayPrimary.rectTransform.anchoredPosition = offset;
-            specialOverlaySecondary.rectTransform.anchoredPosition = offset;
-            pieceLabel.rectTransform.anchoredPosition = offset;
-            blockerLabel.rectTransform.anchoredPosition = offset;
+            effectPieceOffset = offset;
+            ApplyPieceVisualTransform();
         }
 
         public void SetPieceScale(float scale)
         {
             EnsureVisuals();
-            var scaled = new Vector3(scale, scale, 1f);
-            pieceImage.rectTransform.localScale = scaled;
-            specialOverlayPrimary.rectTransform.localScale = scaled;
-            specialOverlaySecondary.rectTransform.localScale = scaled;
-            pieceLabel.rectTransform.localScale = scaled;
-            blockerLabel.rectTransform.localScale = scaled;
+            effectPieceScale = scale;
+            ApplyPieceVisualTransform();
         }
 
         public void SetPieceAlpha(float alpha)
         {
             EnsureVisuals();
-            SetGraphicAlpha(pieceImage, alpha);
-            SetGraphicAlpha(specialOverlayPrimary, alpha);
-            SetGraphicAlpha(specialOverlaySecondary, alpha);
-            SetGraphicAlpha(pieceLabel, alpha);
-            SetGraphicAlpha(blockerLabel, alpha);
+            effectPieceAlpha = alpha;
+            ApplyPieceVisualAlpha();
         }
 
         public void ResetPieceVisualState()
         {
-            SetPieceOffset(Vector2.zero);
-            SetPieceScale(1f);
-            SetPieceAlpha(1f);
+            effectPieceOffset = Vector2.zero;
+            effectPieceScale = 1f;
+            effectPieceAlpha = 1f;
             ApplyPieceBounds(usingSpecialSprite);
+            ApplyPieceVisualTransform();
+            ApplyPieceVisualAlpha();
         }
 
         private bool TryConsumeSwipe(Vector2 currentPosition)
@@ -389,6 +415,74 @@ namespace CharacterMatch3.Board
             }
 
             UIFactory.SetAnchored(pieceImage.rectTransform, Vector2.zero, Vector2.one, new Vector2(inset, inset), new Vector2(-inset, -inset));
+        }
+
+        private void EnableIdleMotion(BoardPiece piece)
+        {
+            pieceIdleEnabled = true;
+            currentPieceKind = piece.Kind;
+            currentPieceCharacter = piece.Character;
+            idlePhase = piece.Id * 0.47f + Coordinate.x * 0.31f + Coordinate.y * 0.23f + (int)piece.Kind * 0.61f;
+            UpdateIdleMotion(Time.unscaledTime);
+        }
+
+        private void DisableIdleMotion()
+        {
+            pieceIdleEnabled = false;
+            idlePieceOffset = Vector2.zero;
+            idlePieceScale = Vector3.one;
+            idlePieceRotation = Quaternion.identity;
+        }
+
+        private void UpdateIdleMotion(float time)
+        {
+            var phase = time * IdleAngularSpeed + idlePhase;
+            var bob = Mathf.Sin(phase);
+            var sway = Mathf.Sin(phase * 0.73f + 1.1f);
+            var breath = Mathf.Sin(phase + Mathf.PI * 0.5f);
+            var specialMultiplier = currentPieceKind == PieceKind.Normal ? 1f : 1.12f;
+
+            idlePieceOffset = new Vector2(
+                sway * IdleSwayAmplitude * specialMultiplier,
+                bob * IdleBobAmplitude * specialMultiplier);
+            idlePieceScale = new Vector3(
+                1f + breath * IdleSquashAmplitude,
+                1f - breath * IdleSquashAmplitude * 0.72f,
+                1f);
+            idlePieceRotation = Quaternion.Euler(0f, 0f, sway * IdleTiltAmplitude * specialMultiplier);
+            ApplyPieceVisualTransform();
+        }
+
+        private void ApplyPieceVisualTransform()
+        {
+            var pieceOffset = pieceIdleEnabled ? effectPieceOffset + idlePieceOffset : effectPieceOffset;
+            var pieceScale = pieceIdleEnabled
+                ? new Vector3(effectPieceScale * idlePieceScale.x, effectPieceScale * idlePieceScale.y, 1f)
+                : new Vector3(effectPieceScale, effectPieceScale, 1f);
+            var blockerScale = new Vector3(effectPieceScale, effectPieceScale, 1f);
+            var pieceRotation = pieceIdleEnabled ? idlePieceRotation : Quaternion.identity;
+
+            ApplyPieceGraphicTransform(pieceImage.rectTransform, pieceOffset, pieceScale, pieceRotation);
+            ApplyPieceGraphicTransform(specialOverlayPrimary.rectTransform, pieceOffset, pieceScale, pieceRotation);
+            ApplyPieceGraphicTransform(specialOverlaySecondary.rectTransform, pieceOffset, pieceScale, pieceRotation);
+            ApplyPieceGraphicTransform(pieceLabel.rectTransform, pieceOffset, pieceScale, pieceRotation);
+            ApplyPieceGraphicTransform(blockerLabel.rectTransform, effectPieceOffset, blockerScale, Quaternion.identity);
+        }
+
+        private void ApplyPieceVisualAlpha()
+        {
+            SetGraphicAlpha(pieceImage, effectPieceAlpha);
+            SetGraphicAlpha(specialOverlayPrimary, effectPieceAlpha);
+            SetGraphicAlpha(specialOverlaySecondary, effectPieceAlpha);
+            SetGraphicAlpha(pieceLabel, effectPieceAlpha);
+            SetGraphicAlpha(blockerLabel, effectPieceAlpha);
+        }
+
+        private static void ApplyPieceGraphicTransform(RectTransform rectTransform, Vector2 offset, Vector3 scale, Quaternion rotation)
+        {
+            rectTransform.anchoredPosition = offset;
+            rectTransform.localScale = scale;
+            rectTransform.localRotation = rotation;
         }
 
         private static void SetOverlayRect(RectTransform rectTransform, Vector2 anchorMin, Vector2 anchorMax)
