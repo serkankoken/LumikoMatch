@@ -253,6 +253,7 @@ namespace CharacterMatch3.Editor
                 AddNormal(level, 3, 2, CharacterType.Bunny);
                 AddNormal(level, 3, 4, CharacterType.Bunny);
                 AddNormal(level, 3, 5, CharacterType.Bunny);
+                level.goals.Add(new LevelGoalData(CharacterType.Bunny, 12));
                 AddTutorial(level, "T and L matches create Burst Pieces.", 3, 5, 3, 3);
             }
             else if (number == 13)
@@ -274,7 +275,10 @@ namespace CharacterMatch3.Editor
                 AddSpecial(level, 5, 3, PieceKind.Burst, CharacterType.Bunny, LineOrientation.Horizontal);
             }
 
-            level.goals.Add(new LevelGoalData(GoalType.BreakCrates, SumLayers(level.cratePlacements)));
+            if (level.cratePlacements.Count > 0)
+            {
+                level.goals.Add(new LevelGoalData(GoalType.BreakCrates, SumLayers(level.cratePlacements)));
+            }
         }
 
         private static void AddMixedCoverLevel(LevelDefinition level, int number)

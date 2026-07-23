@@ -45,11 +45,16 @@ namespace CharacterMatch3.Goals
             foreach (var data in level.goals)
             {
                 var amount = ResolveGoalAmount(level, data);
+                if (amount <= 0)
+                {
+                    continue;
+                }
+
                 activeGoals.Add(new ActiveGoal
                 {
                     goalType = data.goalType,
                     characterType = data.characterType,
-                    targetAmount = Mathf.Max(1, amount),
+                    targetAmount = amount,
                     currentAmount = 0
                 });
             }
@@ -172,7 +177,7 @@ namespace CharacterMatch3.Goals
                 total += Mathf.Max(0, placement.layers);
             }
 
-            return Mathf.Max(1, total);
+            return total;
         }
     }
 }

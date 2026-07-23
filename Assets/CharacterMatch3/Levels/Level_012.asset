@@ -79,9 +79,9 @@ MonoBehaviour:
   reshufflingAllowed: 1
   maximumAutomaticReshuffleAttempts: 10
   goals:
-  - goalType: 2
-    characterType: 0
-    amount: 0
+  - goalType: 0
+    characterType: 1
+    amount: 12
   oneStarScore: 5335
   twoStarScore: 9603
   threeStarScore: 14671

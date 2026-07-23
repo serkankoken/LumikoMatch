@@ -168,11 +168,11 @@ function Populate-Level($number) {
                 if ($number -eq 6) { $l.tutorial = "Soft Cover sits under pieces. Match or hit that cell to clear it." }
             } elseif ($number -le 15) {
                 if ($number -eq 11) { Add-CrateBox $l $cx $cy 1 1; $l.tutorial = "Crates block cells. Break them by matching next to them or hitting them with specials." }
-                elseif ($number -eq 12) { Add-Normal $l 2 3 1; Add-Normal $l 4 3 1; Add-Normal $l 3 2 1; Add-Normal $l 3 4 1; Add-Normal $l 3 5 1; Add-Tutorial $l "T and L matches create Burst Pieces." 3 5 3 3 }
+                elseif ($number -eq 12) { Add-Normal $l 2 3 1; Add-Normal $l 4 3 1; Add-Normal $l 3 2 1; Add-Normal $l 3 4 1; Add-Normal $l 3 5 1; Add-Goal $l 0 1 12; Add-Tutorial $l "T and L matches create Burst Pieces." 3 5 3 3 }
                 elseif ($number -eq 13) { for ($y=1; $y -lt $l.height-1; $y++) { Add-Crate $l $cx $y 1 } }
                 elseif ($number -eq 14) { Add-CrateBox $l $cx $cy 1 1; Add-Goal $l 0 3 14 }
                 else { Add-CrateBox $l $cx $cy 1 2; Add-Special $l 1 3 1 0 0; Add-Special $l 5 3 2 1 0 }
-                Add-Goal $l 2 0 (Sum-Layers $l.crates)
+                if ($l.crates.Count -gt 0) { Add-Goal $l 2 0 (Sum-Layers $l.crates) }
             } elseif ($number -le 20) {
                 Add-SoftBox $l $cx $cy 2 2
                 if ($number -ge 18) { Add-Crate $l ($cx-1) $cy 1; Add-Crate $l ($cx+1) $cy 1; Add-Crate $l $cx ($cy-1) 1; Add-Crate $l $cx ($cy+1) 1 }
