@@ -18,7 +18,7 @@ namespace CharacterMatch3.Editor
         private const string PrimaryMapsFolder = PrimaryUiFolder + "/Maps";
         private const string FlatMapsFolder = "Assets/Assets_Char_UI_Maps";
         private const string LiteralMapsFolder = "Assets_Char_UI_Maps";
-        private const string BackgroundFileName = "BG.png";
+        private const string BackgroundFileName = "BG2.png";
         private const string ContinuousMapFileName = "Map_Continuous_01_15.png";
         private const string LevelMapScenePath = CharacterMatch3Constants.RootPath + "/Scenes/LevelMap.unity";
         private const float DefaultMeadowPercent = 0.36f;
