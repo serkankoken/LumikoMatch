@@ -24,6 +24,11 @@ namespace CharacterMatch3.Editor
         private const string MeadowGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Orman.png";
         private const string BeachGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Sahil.png";
         private const string DesertGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/\u00c7\u00f6l.png";
+        private const string AutumnGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Sonbahar.png";
+        private const string IceGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Buzadas\u0131.png";
+        private const string VolcanoGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Volkanadas\u0131.png";
+        private const string AmusementGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Lunapark.png";
+        private const string RoyalGameplayBackgroundSpritePath = "Assets/Char/UI/LevelsBG/Kraliyet.png";
         private const string ToonSparkleTexturePath = "Assets/Pack/Epic Toon FX/Textures/sparkle.png";
         private const string ToonStarTexturePath = "Assets/Pack/Epic Toon FX/Textures/star.png";
         private const string ToonGlowTexturePath = "Assets/Pack/Epic Toon FX/Textures/glow.png";
@@ -158,7 +163,12 @@ namespace CharacterMatch3.Editor
             var meadow = AssetDatabase.LoadAssetAtPath<Sprite>(MeadowGameplayBackgroundSpritePath);
             var beach = AssetDatabase.LoadAssetAtPath<Sprite>(BeachGameplayBackgroundSpritePath);
             var desert = AssetDatabase.LoadAssetAtPath<Sprite>(DesertGameplayBackgroundSpritePath);
-            catalog.SetGameplayBackgroundSprites(meadow, beach, desert);
+            var autumn = AssetDatabase.LoadAssetAtPath<Sprite>(AutumnGameplayBackgroundSpritePath);
+            var ice = AssetDatabase.LoadAssetAtPath<Sprite>(IceGameplayBackgroundSpritePath);
+            var volcano = AssetDatabase.LoadAssetAtPath<Sprite>(VolcanoGameplayBackgroundSpritePath);
+            var amusement = AssetDatabase.LoadAssetAtPath<Sprite>(AmusementGameplayBackgroundSpritePath);
+            var royal = AssetDatabase.LoadAssetAtPath<Sprite>(RoyalGameplayBackgroundSpritePath);
+            catalog.SetGameplayBackgroundSprites(meadow, beach, desert, autumn, ice, volcano, amusement, royal);
         }
 
         private static void AssignToonEffectTextures(CharacterCatalog catalog)

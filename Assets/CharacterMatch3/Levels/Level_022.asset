@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 22
   displayName: 'Level 022'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'autumn'
   boardWidth: 7
   boardHeight: 8
   activeCells:

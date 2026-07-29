@@ -6,6 +6,19 @@ namespace CharacterMatch3.Editor
 {
     public static class LevelFactory
     {
+        private const int LevelsPerTheme = 7;
+        private static readonly string[] BackgroundThemeIds =
+        {
+            "meadow",
+            "beach",
+            "desert",
+            "autumn",
+            "ice",
+            "volcano",
+            "amusement",
+            "royal"
+        };
+
         [MenuItem("Character Match-3/Generate Missing Level Assets")]
         public static void GenerateMissingLevelAssetsMenu()
         {
@@ -64,12 +77,7 @@ namespace CharacterMatch3.Editor
             level.levelNumber = number;
             level.displayName = $"Level {number:000}";
             level.difficultyLabel = hardCheckpoint ? DifficultyLabel.Hard : normalCheckpoint ? DifficultyLabel.Normal : DifficultyLabel.Easy;
-            level.backgroundThemeId = number switch
-            {
-                <= 7 => "meadow",
-                <= 14 => "beach",
-                _ => "desert"
-            };
+            level.backgroundThemeId = GetBackgroundThemeId(number);
 
             var width = number < 31 ? 7 : number < 41 ? 8 : 9;
             var height = number < 21 ? 7 : number < 36 ? 8 : 9;
@@ -113,6 +121,13 @@ namespace CharacterMatch3.Editor
             level.twoStarScore = Mathf.RoundToInt(level.oneStarScore * 1.8f);
             level.threeStarScore = Mathf.RoundToInt(level.oneStarScore * 2.75f);
             level.EnsureDefaults();
+        }
+
+        private static string GetBackgroundThemeId(int number)
+        {
+            var zeroBased = Mathf.Max(0, number - CharacterMatch3Constants.FirstLevel);
+            var themeIndex = Mathf.Clamp(zeroBased / LevelsPerTheme, 0, BackgroundThemeIds.Length - 1);
+            return BackgroundThemeIds[themeIndex];
         }
 
         private static void AddProgressionContent(LevelDefinition level, int number)

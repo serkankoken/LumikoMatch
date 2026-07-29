@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 49
   displayName: 'Level 049'
   difficultyLabel: 2
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'amusement'
   boardWidth: 9
   boardHeight: 9
   activeCells:

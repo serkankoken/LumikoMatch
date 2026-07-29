@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 38
   displayName: 'Level 038'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'volcano'
   boardWidth: 8
   boardHeight: 9
   activeCells:

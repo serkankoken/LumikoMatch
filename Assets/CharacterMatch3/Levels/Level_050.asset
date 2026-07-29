@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 50
   displayName: 'Level 050: Lantern Finale'
   difficultyLabel: 2
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'royal'
   boardWidth: 9
   boardHeight: 9
   activeCells:

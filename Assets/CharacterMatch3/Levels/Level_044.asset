@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 44
   displayName: 'Level 044'
   difficultyLabel: 1
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'amusement'
   boardWidth: 9
   boardHeight: 9
   activeCells:

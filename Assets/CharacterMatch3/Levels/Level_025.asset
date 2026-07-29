@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 25
   displayName: 'Level 025'
   difficultyLabel: 2
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'autumn'
   boardWidth: 7
   boardHeight: 8
   activeCells:

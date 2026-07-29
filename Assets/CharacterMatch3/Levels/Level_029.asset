@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 29
   displayName: 'Level 029'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'ice'
   boardWidth: 7
   boardHeight: 8
   activeCells:

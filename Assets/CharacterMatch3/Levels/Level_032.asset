@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 32
   displayName: 'Level 032'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'ice'
   boardWidth: 8
   boardHeight: 8
   activeCells:

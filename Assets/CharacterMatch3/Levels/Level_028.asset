@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 28
   displayName: 'Level 028'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'autumn'
   boardWidth: 7
   boardHeight: 8
   activeCells:

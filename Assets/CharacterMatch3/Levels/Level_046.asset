@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 46
   displayName: 'Level 046'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'amusement'
   boardWidth: 9
   boardHeight: 9
   activeCells:

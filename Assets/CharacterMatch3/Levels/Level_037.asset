@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 37
   displayName: 'Level 037'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'volcano'
   boardWidth: 8
   boardHeight: 9
   activeCells:

@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 35
   displayName: 'Level 035'
   difficultyLabel: 2
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'ice'
   boardWidth: 8
   boardHeight: 8
   activeCells:

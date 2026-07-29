@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 24
   displayName: 'Level 024'
   difficultyLabel: 1
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'autumn'
   boardWidth: 7
   boardHeight: 8
   activeCells:

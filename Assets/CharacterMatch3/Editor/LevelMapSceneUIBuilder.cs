@@ -13,8 +13,8 @@ namespace CharacterMatch3.Editor
     {
         private const string LevelMapScenePath = CharacterMatch3Constants.RootPath + "/Scenes/LevelMap.unity";
         private const string AutoRefreshSessionKey = "CharacterMatch3.LevelMapSceneUIBuilder.AutoRefreshOpenLevelMap";
-        private const int PreviewLevelCount = 21;
-        private const float PreviewMapContentHeight = 4512f;
+        private const int PreviewLevelCount = CharacterMatch3Constants.LastLevel;
+        private const float PreviewMapContentHeight = 4680f;
         private const float PreviewNodeSize = 92f;
         private const float PreviewPlayerMarkerSize = 78f;
 
@@ -49,6 +49,90 @@ namespace CharacterMatch3.Editor
             new Vector2(0.47f, 0.64f),
             new Vector2(0.54f, 0.56f),
             new Vector2(0.49f, 0.48f)
+        };
+
+        private static readonly Vector2[][] PreviewRoadFactors =
+        {
+            new[]
+            {
+                new Vector2(0.55f, 0.91f),
+                new Vector2(0.48f, 0.78f),
+                new Vector2(0.42f, 0.64f),
+                new Vector2(0.47f, 0.51f),
+                new Vector2(0.56f, 0.38f),
+                new Vector2(0.5f, 0.25f),
+                new Vector2(0.43f, 0.12f)
+            },
+            new[]
+            {
+                new Vector2(0.43f, 0.91f),
+                new Vector2(0.52f, 0.78f),
+                new Vector2(0.62f, 0.65f),
+                new Vector2(0.56f, 0.52f),
+                new Vector2(0.45f, 0.39f),
+                new Vector2(0.5f, 0.25f),
+                new Vector2(0.59f, 0.12f)
+            },
+            new[]
+            {
+                new Vector2(0.53f, 0.9f),
+                new Vector2(0.45f, 0.78f),
+                new Vector2(0.39f, 0.65f),
+                new Vector2(0.48f, 0.52f),
+                new Vector2(0.57f, 0.39f),
+                new Vector2(0.52f, 0.25f),
+                new Vector2(0.46f, 0.12f)
+            },
+            new[]
+            {
+                new Vector2(0.46f, 0.9f),
+                new Vector2(0.55f, 0.78f),
+                new Vector2(0.61f, 0.65f),
+                new Vector2(0.54f, 0.52f),
+                new Vector2(0.45f, 0.39f),
+                new Vector2(0.49f, 0.25f),
+                new Vector2(0.58f, 0.12f)
+            },
+            new[]
+            {
+                new Vector2(0.58f, 0.9f),
+                new Vector2(0.5f, 0.78f),
+                new Vector2(0.42f, 0.65f),
+                new Vector2(0.48f, 0.52f),
+                new Vector2(0.57f, 0.39f),
+                new Vector2(0.51f, 0.25f),
+                new Vector2(0.44f, 0.12f)
+            },
+            new[]
+            {
+                new Vector2(0.44f, 0.9f),
+                new Vector2(0.51f, 0.78f),
+                new Vector2(0.58f, 0.65f),
+                new Vector2(0.53f, 0.52f),
+                new Vector2(0.44f, 0.39f),
+                new Vector2(0.49f, 0.25f),
+                new Vector2(0.57f, 0.12f)
+            },
+            new[]
+            {
+                new Vector2(0.57f, 0.9f),
+                new Vector2(0.5f, 0.78f),
+                new Vector2(0.43f, 0.65f),
+                new Vector2(0.36f, 0.52f),
+                new Vector2(0.42f, 0.39f),
+                new Vector2(0.51f, 0.25f),
+                new Vector2(0.6f, 0.12f)
+            },
+            new[]
+            {
+                new Vector2(0.52f, 0.62f),
+                new Vector2(0.46f, 0.52f),
+                new Vector2(0.58f, 0.43f),
+                new Vector2(0.5f, 0.35f),
+                new Vector2(0.44f, 0.28f),
+                new Vector2(0.56f, 0.2f),
+                new Vector2(0.5f, 0.12f)
+            }
         };
 
         [MenuItem("Character Match-3/Map Tools/Create Scene Editable Map UI")]
@@ -301,11 +385,12 @@ namespace CharacterMatch3.Editor
             var zeroBased = Mathf.Max(0, levelNumber - CharacterMatch3Constants.FirstLevel);
             var section = zeroBased / 7;
             var localIndex = zeroBased % 7;
-            var factors = section == 0 ? forestFactors : section == 1 ? beachFactors : desertFactors;
+            var factors = PreviewRoadFactors[Mathf.Clamp(section, 0, PreviewRoadFactors.Length - 1)];
             var factor = factors[Mathf.Clamp(localIndex, 0, factors.Length - 1)];
 
-            var bottom = section == 0 ? 0f : section == 1 ? meadowPercent : meadowPercent + beachPercent;
-            var height = section == 0 ? meadowPercent : section == 1 ? beachPercent : desertPercent;
+            var sectionCount = Mathf.Max(1, Mathf.CeilToInt(CharacterMatch3Constants.LastLevel / 7f));
+            var bottom = Mathf.Clamp01(section / (float)sectionCount);
+            var height = 1f / sectionCount;
             var x = Mathf.Clamp01(factor.x);
             var y = Mathf.Clamp01(bottom + (1f - Mathf.Clamp01(factor.y)) * height);
             return new Vector2(x, y);

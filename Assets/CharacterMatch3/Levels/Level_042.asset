@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 42
   displayName: 'Level 042'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'volcano'
   boardWidth: 9
   boardHeight: 9
   activeCells:

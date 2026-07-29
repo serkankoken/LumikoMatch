@@ -70,6 +70,13 @@ function Layer($x, $y, $layers) { [pscustomobject]@{ x = [int]$x; y = [int]$y; l
 function Placement($x, $y, $kind, $character, $orientation) { [pscustomobject]@{ x = [int]$x; y = [int]$y; kind = [int]$kind; character = [int]$character; orientation = [int]$orientation } }
 function Goal($type, $character, $amount) { [pscustomobject]@{ type = [int]$type; character = [int]$character; amount = [int]$amount } }
 
+function Get-LevelTheme($number) {
+    $themes = @("meadow", "beach", "desert", "autumn", "ice", "volcano", "amusement", "royal")
+    $index = [int][Math]::Floor(([Math]::Max(1, $number) - 1) / 7)
+    if ($index -ge $themes.Length) { $index = $themes.Length - 1 }
+    return $themes[$index]
+}
+
 function New-Level($number) {
     $width = if ($number -lt 31) { 7 } elseif ($number -lt 41) { 8 } else { 9 }
     $height = if ($number -lt 21) { 7 } elseif ($number -lt 36) { 8 } else { 9 }
@@ -81,7 +88,7 @@ function New-Level($number) {
         number = $number
         name = "Level {0:000}" -f $number
         difficulty = if ($hard) { 2 } elseif ($normal) { 1 } else { 0 }
-        theme = if ($number -le 6) { "meadow" } elseif ($number -le 12) { "beach" } else { "desert" }
+        theme = Get-LevelTheme $number
         width = $width
         height = $height
         active = $active

@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 43
   displayName: 'Level 043'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'amusement'
   boardWidth: 9
   boardHeight: 9
   activeCells:

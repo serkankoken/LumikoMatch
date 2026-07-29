@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 23
   displayName: 'Level 023'
   difficultyLabel: 0
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'autumn'
   boardWidth: 7
   boardHeight: 8
   activeCells:

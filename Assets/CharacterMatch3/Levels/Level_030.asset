@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 30
   displayName: 'Level 030'
   difficultyLabel: 2
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'ice'
   boardWidth: 7
   boardHeight: 8
   activeCells:

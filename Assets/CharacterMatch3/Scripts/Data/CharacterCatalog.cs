@@ -35,6 +35,11 @@ namespace CharacterMatch3
         [SerializeField] private Sprite meadowGameplayBackgroundSprite;
         [SerializeField] private Sprite beachGameplayBackgroundSprite;
         [SerializeField] private Sprite desertGameplayBackgroundSprite;
+        [SerializeField] private Sprite autumnGameplayBackgroundSprite;
+        [SerializeField] private Sprite iceGameplayBackgroundSprite;
+        [SerializeField] private Sprite volcanoGameplayBackgroundSprite;
+        [SerializeField] private Sprite amusementGameplayBackgroundSprite;
+        [SerializeField] private Sprite royalGameplayBackgroundSprite;
         [Header("Toon effect textures")]
         [SerializeField] private Texture2D toonSparkleTexture;
         [SerializeField] private Texture2D toonStarTexture;
@@ -177,11 +182,24 @@ namespace CharacterMatch3
             softCoverBrokenSprite = brokenSprite;
         }
 
-        public void SetGameplayBackgroundSprites(Sprite meadowSprite, Sprite beachSprite, Sprite desertSprite)
+        public void SetGameplayBackgroundSprites(
+            Sprite meadowSprite,
+            Sprite beachSprite,
+            Sprite desertSprite,
+            Sprite autumnSprite = null,
+            Sprite iceSprite = null,
+            Sprite volcanoSprite = null,
+            Sprite amusementSprite = null,
+            Sprite royalSprite = null)
         {
             meadowGameplayBackgroundSprite = meadowSprite;
             beachGameplayBackgroundSprite = beachSprite;
             desertGameplayBackgroundSprite = desertSprite;
+            autumnGameplayBackgroundSprite = autumnSprite;
+            iceGameplayBackgroundSprite = iceSprite;
+            volcanoGameplayBackgroundSprite = volcanoSprite;
+            amusementGameplayBackgroundSprite = amusementSprite;
+            royalGameplayBackgroundSprite = royalSprite;
         }
 
         public void SetToonEffectTextures(
@@ -221,6 +239,31 @@ namespace CharacterMatch3
                 }
 
                 return beachGameplayBackgroundSprite != null ? beachGameplayBackgroundSprite : meadowGameplayBackgroundSprite;
+            }
+
+            if (string.Equals(themeId, "autumn", StringComparison.OrdinalIgnoreCase))
+            {
+                return autumnGameplayBackgroundSprite != null ? autumnGameplayBackgroundSprite : GetGameplayBackgroundSprite("desert");
+            }
+
+            if (string.Equals(themeId, "ice", StringComparison.OrdinalIgnoreCase))
+            {
+                return iceGameplayBackgroundSprite != null ? iceGameplayBackgroundSprite : GetGameplayBackgroundSprite("autumn");
+            }
+
+            if (string.Equals(themeId, "volcano", StringComparison.OrdinalIgnoreCase))
+            {
+                return volcanoGameplayBackgroundSprite != null ? volcanoGameplayBackgroundSprite : GetGameplayBackgroundSprite("ice");
+            }
+
+            if (string.Equals(themeId, "amusement", StringComparison.OrdinalIgnoreCase))
+            {
+                return amusementGameplayBackgroundSprite != null ? amusementGameplayBackgroundSprite : GetGameplayBackgroundSprite("volcano");
+            }
+
+            if (string.Equals(themeId, "royal", StringComparison.OrdinalIgnoreCase))
+            {
+                return royalGameplayBackgroundSprite != null ? royalGameplayBackgroundSprite : GetGameplayBackgroundSprite("amusement");
             }
 
             return meadowGameplayBackgroundSprite != null

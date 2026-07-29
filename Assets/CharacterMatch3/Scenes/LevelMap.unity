@@ -209,7 +209,7 @@ MonoBehaviour:
   meadowSlicePercent: 0.36
   beachSlicePercent: 0.32
   mapSliceOverlapPercent: 0.05
-  mapArtZoom: 1.18
+  mapArtZoom: 1
   showBottomBar: 0
   stepAnimationDuration: 0.75
   stepPauseDuration: 0.12

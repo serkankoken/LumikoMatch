@@ -15,7 +15,7 @@ MonoBehaviour:
   levelNumber: 34
   displayName: 'Level 034'
   difficultyLabel: 1
-  backgroundThemeId: 'desert'
+  backgroundThemeId: 'ice'
   boardWidth: 8
   boardHeight: 8
   activeCells:
