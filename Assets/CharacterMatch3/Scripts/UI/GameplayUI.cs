@@ -194,6 +194,7 @@ namespace CharacterMatch3.UI
 
             foreach (var goal in goalManager.ActiveGoals)
             {
+                var hasGoalIcon = goal.goalType == GoalType.CollectCharacter || goal.goalType == GoalType.DropCompanions;
                 var item = UIFactory.CreatePanel($"Goal_{goal.goalType}", goalsRoot, goal.IsComplete ? new Color(0.48f, 0.9f, 0.56f, 0.9f) : new Color(1f, 0.96f, 0.78f, 0.92f));
                 var itemShadow = item.AddComponent<Shadow>();
                 itemShadow.effectColor = new Color(0.08f, 0.08f, 0.08f, 0.2f);
@@ -201,7 +202,7 @@ namespace CharacterMatch3.UI
                 var itemLayoutElement = item.AddComponent<LayoutElement>();
                 itemLayoutElement.minHeight = 64f;
                 itemLayoutElement.preferredHeight = 64f;
-                itemLayoutElement.minWidth = goal.goalType == GoalType.CollectCharacter ? 244f : 204f;
+                itemLayoutElement.minWidth = hasGoalIcon ? 244f : 204f;
                 itemLayoutElement.preferredWidth = itemLayoutElement.minWidth;
 
                 var layout = item.AddComponent<HorizontalLayoutGroup>();
@@ -219,13 +220,60 @@ namespace CharacterMatch3.UI
                     icon.rectTransform.sizeDelta = new Vector2(52, 52);
                     icon.raycastTarget = false;
                 }
+                else if (goal.goalType == GoalType.DropCompanions)
+                {
+                    CreateCompanionGoalIcon(item.transform);
+                }
 
                 var labelText = goal.IsComplete ? $"{goal.DisplayName}\nDone" : $"{goal.DisplayName}\n{goal.Remaining} left";
                 var label = UIFactory.CreateText("Label", item.transform, labelText, 24, TextAnchor.MiddleCenter, new Color(0.2f, 0.14f, 0.08f));
                 label.fontStyle = FontStyle.Bold;
-                label.rectTransform.sizeDelta = new Vector2(goal.goalType == GoalType.CollectCharacter ? 160 : 172, 58);
+                label.rectTransform.sizeDelta = new Vector2(hasGoalIcon ? 152 : 172, 58);
                 label.raycastTarget = false;
             }
+        }
+
+        private void CreateCompanionGoalIcon(Transform parent)
+        {
+            var root = new GameObject("CompanionGoalIcon", typeof(RectTransform), typeof(LayoutElement));
+            root.transform.SetParent(parent, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.sizeDelta = new Vector2(54f, 54f);
+            var layout = root.GetComponent<LayoutElement>();
+            layout.minWidth = 54f;
+            layout.preferredWidth = 54f;
+            layout.minHeight = 54f;
+            layout.preferredHeight = 54f;
+
+            var glow = UIFactory.CreateImage("Glow", root.transform, new Color(1f, 0.78f, 0.18f, 0.32f));
+            glow.sprite = UIFactory.GetRoundedRectSprite(96, 96, 48f);
+            glow.type = Image.Type.Sliced;
+            glow.raycastTarget = false;
+            UIFactory.SetAnchored(glow.rectTransform, new Vector2(0.02f, 0.02f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero);
+
+            var badge = UIFactory.CreateImage("Badge", root.transform, new Color(1f, 0.93f, 0.45f, 0.92f));
+            badge.sprite = UIFactory.GetRoundedRectSprite(96, 96, 48f);
+            badge.type = Image.Type.Sliced;
+            badge.raycastTarget = false;
+            UIFactory.SetAnchored(badge.rectTransform, new Vector2(0.1f, 0.1f), new Vector2(0.9f, 0.9f), Vector2.zero, Vector2.zero);
+
+            var icon = UIFactory.CreateImage("Character", root.transform, catalog != null ? catalog.GetFallbackColor(CharacterType.Cat) : Color.white);
+            icon.sprite = catalog != null ? catalog.GetSprite(CharacterType.Cat) : null;
+            icon.color = icon.sprite != null ? Color.white : icon.color;
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            UIFactory.SetAnchored(icon.rectTransform, new Vector2(0.17f, 0.2f), new Vector2(0.83f, 0.92f), Vector2.zero, Vector2.zero);
+
+            var ribbon = UIFactory.CreateImage("Ribbon", root.transform, new Color(0.22f, 0.68f, 0.98f, 0.95f));
+            ribbon.sprite = UIFactory.GetRoundedRectSprite(72, 26, 13f);
+            ribbon.type = Image.Type.Sliced;
+            ribbon.raycastTarget = false;
+            UIFactory.SetAnchored(ribbon.rectTransform, new Vector2(0.25f, 0.04f), new Vector2(0.75f, 0.25f), Vector2.zero, Vector2.zero);
+
+            var arrow = UIFactory.CreateText("Arrow", root.transform, "\u25BE", 22, TextAnchor.MiddleCenter, Color.white);
+            arrow.fontStyle = FontStyle.Bold;
+            arrow.raycastTarget = false;
+            UIFactory.SetAnchored(arrow.rectTransform, new Vector2(0.25f, 0.01f), new Vector2(0.75f, 0.28f), Vector2.zero, Vector2.zero);
         }
 
         private void EnsureBuilt()

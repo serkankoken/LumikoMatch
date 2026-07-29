@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using CharacterMatch3.Core;
 using UnityEngine;
 using UnityEngine.Events;
@@ -10,6 +11,7 @@ namespace CharacterMatch3.UI
     public static class UIFactory
     {
         private static Font cachedFont;
+        private static readonly Dictionary<string, Sprite> roundedRectSprites = new Dictionary<string, Sprite>();
 
         public static Font DefaultFont
         {
@@ -115,6 +117,54 @@ namespace CharacterMatch3.UI
             var image = imageObject.GetComponent<Image>();
             image.color = color;
             return image;
+        }
+
+        public static Sprite GetRoundedRectSprite(int width, int height, float radius)
+        {
+            width = Mathf.Max(4, width);
+            height = Mathf.Max(4, height);
+            radius = Mathf.Clamp(radius, 0f, Mathf.Min(width, height) * 0.5f);
+            var key = $"{width}x{height}:{radius:0.##}";
+            if (roundedRectSprites.TryGetValue(key, out var cached) && cached != null)
+            {
+                return cached;
+            }
+
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            var halfWidth = width * 0.5f;
+            var halfHeight = height * 0.5f;
+            var innerHalfWidth = halfWidth - radius;
+            var innerHalfHeight = halfHeight - radius;
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    var px = x + 0.5f - halfWidth;
+                    var py = y + 0.5f - halfHeight;
+                    var qx = Mathf.Abs(px) - innerHalfWidth;
+                    var qy = Mathf.Abs(py) - innerHalfHeight;
+                    var outsideX = Mathf.Max(qx, 0f);
+                    var outsideY = Mathf.Max(qy, 0f);
+                    var outsideDistance = Mathf.Sqrt(outsideX * outsideX + outsideY * outsideY);
+                    var insideDistance = Mathf.Min(Mathf.Max(qx, qy), 0f);
+                    var signedDistance = outsideDistance + insideDistance - radius;
+                    var alpha = radius <= 0f ? 1f : Mathf.Clamp01(0.5f - signedDistance);
+                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+
+            texture.Apply();
+            var border = Vector4.one * radius;
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, border);
+            sprite.hideFlags = HideFlags.HideAndDontSave;
+            roundedRectSprites[key] = sprite;
+            return sprite;
         }
 
         public static void Stretch(RectTransform rectTransform)

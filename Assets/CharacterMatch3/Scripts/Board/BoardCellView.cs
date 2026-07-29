@@ -26,11 +26,27 @@ namespace CharacterMatch3.Board
         private static readonly Color SelectedCellColor = new Color(1f, 0.93f, 0.35f, 0.95f);
         private static readonly Color SoftCoverSingleLayerFallbackColor = new Color(0.65f, 0.93f, 0.98f, 0.5f);
         private static readonly Color SoftCoverMultiLayerFallbackColor = new Color(0.38f, 0.83f, 0.92f, 0.72f);
+        private static readonly Color CompanionTokenGlowColor = new Color(1f, 0.78f, 0.18f, 0.38f);
+        private static readonly Color CompanionTokenBadgeColor = new Color(1f, 0.93f, 0.45f, 0.9f);
+        private static readonly Color CompanionTokenRibbonColor = new Color(0.22f, 0.68f, 0.98f, 0.94f);
+        private static readonly Color CompanionTokenArrowColor = new Color(1f, 1f, 1f, 0.98f);
+        private static readonly Color CompanionExitGlowColor = new Color(0.28f, 0.95f, 1f, 0.24f);
+        private static readonly Color CompanionExitPadColor = new Color(0.06f, 0.48f, 0.72f, 0.72f);
+        private static readonly Color CompanionExitCoreColor = new Color(0.84f, 1f, 1f, 0.86f);
+        private static readonly Color CompanionExitArrowColor = new Color(0.03f, 0.38f, 0.56f, 0.96f);
 
         private BoardView boardView;
         private Image background;
         private Image gridImage;
         private Image pieceImage;
+        private Image companionExitGlow;
+        private Image companionExitPad;
+        private Image companionExitCore;
+        private Text companionExitArrow;
+        private Image companionTokenGlow;
+        private Image companionTokenBadge;
+        private Image companionTokenRibbon;
+        private Text companionTokenArrow;
         private Image softCoverImage;
         private Image specialOverlayPrimary;
         private Image specialOverlaySecondary;
@@ -80,6 +96,8 @@ namespace CharacterMatch3.Board
                 gridImage.enabled = false;
                 gridImage.sprite = null;
                 pieceImage.enabled = false;
+                SetCompanionExitVisible(false);
+                SetCompanionTokenVisible(false);
                 softCoverImage.enabled = false;
                 softCoverImage.sprite = null;
                 specialOverlayPrimary.enabled = false;
@@ -92,6 +110,8 @@ namespace CharacterMatch3.Board
             var gridSprite = catalog != null ? catalog.GridCellSprite : null;
             var softCoverSprite = catalog != null ? catalog.SoftCoverSprite : null;
             var hasSoftCover = cell.SoftCoverLayers > 0;
+            SetCompanionExitVisible(cell.IsCompanionExit);
+            SetCompanionTokenVisible(false);
             background.sprite = null;
             background.color = selected
                 ? SelectedCellColor
@@ -139,10 +159,12 @@ namespace CharacterMatch3.Board
                 currentPieceKind = cell.Piece.Kind;
                 currentPieceCharacter = cell.Piece.Character;
                 EnableIdleMotion(cell.Piece);
+                SetCompanionTokenVisible(true);
+                ApplyCompanionPieceBounds();
                 pieceImage.enabled = true;
-                pieceImage.sprite = null;
-                pieceImage.color = new Color(1f, 0.92f, 0.4f);
-                pieceLabel.text = string.Empty;
+                pieceImage.sprite = catalog != null ? catalog.GetSprite(cell.Piece.Character) : null;
+                pieceImage.color = pieceImage.sprite != null ? Color.white : new Color(1f, 0.92f, 0.4f);
+                pieceLabel.text = pieceImage.sprite == null ? "C" : string.Empty;
                 ApplyPieceVisualTransform();
             }
             else
@@ -178,10 +200,6 @@ namespace CharacterMatch3.Board
             if (cell.LockLayers > 0)
             {
                 blockerLabel.text = cell.LockLayers > 1 ? "LK2" : "LK";
-            }
-            else if (cell.IsCompanionExit)
-            {
-                blockerLabel.text = "EXIT";
             }
         }
 
@@ -355,10 +373,58 @@ namespace CharacterMatch3.Board
                 new Vector2(-GridSpriteOverscan, -GridSpriteOverscan),
                 new Vector2(GridSpriteOverscan, GridSpriteOverscan));
 
+            companionExitGlow = UIFactory.CreateImage("CompanionExitGlow", transform, CompanionExitGlowColor);
+            companionExitGlow.sprite = UIFactory.GetRoundedRectSprite(96, 48, 24f);
+            companionExitGlow.type = Image.Type.Sliced;
+            companionExitGlow.raycastTarget = false;
+            UIFactory.SetAnchored(companionExitGlow.rectTransform, new Vector2(0.08f, 0.02f), new Vector2(0.92f, 0.46f), Vector2.zero, Vector2.zero);
+
+            companionExitPad = UIFactory.CreateImage("CompanionExitPad", transform, CompanionExitPadColor);
+            companionExitPad.sprite = UIFactory.GetRoundedRectSprite(96, 38, 19f);
+            companionExitPad.type = Image.Type.Sliced;
+            companionExitPad.raycastTarget = false;
+            UIFactory.SetAnchored(companionExitPad.rectTransform, new Vector2(0.16f, 0.04f), new Vector2(0.84f, 0.31f), Vector2.zero, Vector2.zero);
+
+            companionExitCore = UIFactory.CreateImage("CompanionExitCore", transform, CompanionExitCoreColor);
+            companionExitCore.sprite = UIFactory.GetRoundedRectSprite(72, 20, 10f);
+            companionExitCore.type = Image.Type.Sliced;
+            companionExitCore.raycastTarget = false;
+            UIFactory.SetAnchored(companionExitCore.rectTransform, new Vector2(0.25f, 0.07f), new Vector2(0.75f, 0.19f), Vector2.zero, Vector2.zero);
+
+            companionExitArrow = UIFactory.CreateText("CompanionExitArrow", transform, "\u25BE", 42, TextAnchor.MiddleCenter, CompanionExitArrowColor);
+            companionExitArrow.fontStyle = FontStyle.Bold;
+            companionExitArrow.raycastTarget = false;
+            UIFactory.SetAnchored(companionExitArrow.rectTransform, new Vector2(0.2f, 0.15f), new Vector2(0.8f, 0.55f), Vector2.zero, Vector2.zero);
+            SetCompanionExitVisible(false);
+
             softCoverImage = UIFactory.CreateImage("SoftCover", transform, Color.clear);
             softCoverImage.preserveAspect = false;
             softCoverImage.raycastTarget = false;
             UIFactory.Stretch(softCoverImage.rectTransform);
+
+            companionTokenGlow = UIFactory.CreateImage("CompanionTokenGlow", transform, CompanionTokenGlowColor);
+            companionTokenGlow.sprite = UIFactory.GetRoundedRectSprite(96, 96, 48f);
+            companionTokenGlow.type = Image.Type.Sliced;
+            companionTokenGlow.raycastTarget = false;
+            UIFactory.SetAnchored(companionTokenGlow.rectTransform, new Vector2(0.02f, 0.02f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero);
+
+            companionTokenBadge = UIFactory.CreateImage("CompanionTokenBadge", transform, CompanionTokenBadgeColor);
+            companionTokenBadge.sprite = UIFactory.GetRoundedRectSprite(96, 96, 48f);
+            companionTokenBadge.type = Image.Type.Sliced;
+            companionTokenBadge.raycastTarget = false;
+            UIFactory.SetAnchored(companionTokenBadge.rectTransform, new Vector2(0.12f, 0.11f), new Vector2(0.88f, 0.89f), Vector2.zero, Vector2.zero);
+
+            companionTokenRibbon = UIFactory.CreateImage("CompanionTokenRibbon", transform, CompanionTokenRibbonColor);
+            companionTokenRibbon.sprite = UIFactory.GetRoundedRectSprite(72, 26, 13f);
+            companionTokenRibbon.type = Image.Type.Sliced;
+            companionTokenRibbon.raycastTarget = false;
+            UIFactory.SetAnchored(companionTokenRibbon.rectTransform, new Vector2(0.24f, 0.04f), new Vector2(0.76f, 0.24f), Vector2.zero, Vector2.zero);
+
+            companionTokenArrow = UIFactory.CreateText("CompanionTokenArrow", transform, "\u25BE", 28, TextAnchor.MiddleCenter, CompanionTokenArrowColor);
+            companionTokenArrow.fontStyle = FontStyle.Bold;
+            companionTokenArrow.raycastTarget = false;
+            UIFactory.SetAnchored(companionTokenArrow.rectTransform, new Vector2(0.26f, 0.02f), new Vector2(0.74f, 0.26f), Vector2.zero, Vector2.zero);
+            SetCompanionTokenVisible(false);
 
             pieceImage = UIFactory.CreateImage("Piece", transform, Color.white);
             pieceImage.preserveAspect = true;
@@ -518,6 +584,10 @@ namespace CharacterMatch3.Board
             var blockerScale = new Vector3(effectPieceScale, effectPieceScale, 1f);
             var pieceRotation = pieceIdleEnabled ? idlePieceRotation : Quaternion.identity;
 
+            ApplyPieceGraphicTransform(companionTokenGlow.rectTransform, pieceOffset, pieceScale, pieceRotation);
+            ApplyPieceGraphicTransform(companionTokenBadge.rectTransform, pieceOffset, pieceScale, pieceRotation);
+            ApplyPieceGraphicTransform(companionTokenRibbon.rectTransform, pieceOffset, pieceScale, pieceRotation);
+            ApplyPieceGraphicTransform(companionTokenArrow.rectTransform, pieceOffset, pieceScale, pieceRotation);
             ApplyPieceGraphicTransform(pieceImage.rectTransform, pieceOffset, pieceScale, pieceRotation);
             ApplyPieceGraphicTransform(specialOverlayPrimary.rectTransform, pieceOffset, pieceScale, pieceRotation);
             ApplyPieceGraphicTransform(specialOverlaySecondary.rectTransform, pieceOffset, pieceScale, pieceRotation);
@@ -532,6 +602,44 @@ namespace CharacterMatch3.Board
             SetGraphicAlpha(specialOverlaySecondary, effectPieceAlpha);
             SetGraphicAlpha(pieceLabel, effectPieceAlpha);
             SetGraphicAlpha(blockerLabel, effectPieceAlpha);
+            ApplyCompanionTokenAlpha(effectPieceAlpha);
+        }
+
+        private void SetCompanionExitVisible(bool visible)
+        {
+            companionExitGlow.enabled = visible;
+            companionExitPad.enabled = visible;
+            companionExitCore.enabled = visible;
+            companionExitArrow.enabled = visible;
+            companionExitGlow.color = CompanionExitGlowColor;
+            companionExitPad.color = CompanionExitPadColor;
+            companionExitCore.color = CompanionExitCoreColor;
+            companionExitArrow.color = CompanionExitArrowColor;
+        }
+
+        private void SetCompanionTokenVisible(bool visible)
+        {
+            companionTokenGlow.enabled = visible;
+            companionTokenBadge.enabled = visible;
+            companionTokenRibbon.enabled = visible;
+            companionTokenArrow.enabled = visible;
+            companionTokenGlow.color = CompanionTokenGlowColor;
+            companionTokenBadge.color = CompanionTokenBadgeColor;
+            companionTokenRibbon.color = CompanionTokenRibbonColor;
+            companionTokenArrow.color = CompanionTokenArrowColor;
+        }
+
+        private void ApplyCompanionPieceBounds()
+        {
+            UIFactory.SetAnchored(pieceImage.rectTransform, new Vector2(0.15f, 0.18f), new Vector2(0.85f, 0.92f), Vector2.zero, Vector2.zero);
+        }
+
+        private void ApplyCompanionTokenAlpha(float alpha)
+        {
+            SetGraphicAlpha(companionTokenGlow, CompanionTokenGlowColor.a * alpha);
+            SetGraphicAlpha(companionTokenBadge, CompanionTokenBadgeColor.a * alpha);
+            SetGraphicAlpha(companionTokenRibbon, CompanionTokenRibbonColor.a * alpha);
+            SetGraphicAlpha(companionTokenArrow, CompanionTokenArrowColor.a * alpha);
         }
 
         private static void ApplyPieceGraphicTransform(RectTransform rectTransform, Vector2 offset, Vector3 scale, Quaternion rotation)
