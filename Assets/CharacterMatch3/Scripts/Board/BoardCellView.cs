@@ -12,6 +12,10 @@ namespace CharacterMatch3.Board
         private const float BearSpecialInset = -18f;
         private const float OtherSpecialInset = 2f;
         private const float GridSpriteOverscan = 38f;
+        private const float GridSpriteVisibleWidthRatio = 786f / 1254f;
+        private const float GridSpriteVisibleHeightRatio = 819f / 1254f;
+        private const float SoftCoverSpriteVisibleWidthRatio = 1008f / 1254f;
+        private const float SoftCoverSpriteVisibleHeightRatio = 1025f / 1254f;
         private const float IdleBobAmplitude = 3.2f;
         private const float IdleSwayAmplitude = 0.65f;
         private const float IdleSquashAmplitude = 0.014f;
@@ -86,19 +90,20 @@ namespace CharacterMatch3.Board
             }
 
             var gridSprite = catalog != null ? catalog.GridCellSprite : null;
+            var softCoverSprite = catalog != null ? catalog.SoftCoverSprite : null;
+            var hasSoftCover = cell.SoftCoverLayers > 0;
             background.sprite = null;
             background.color = selected
                 ? SelectedCellColor
-                : gridSprite != null
+                : gridSprite != null || (hasSoftCover && softCoverSprite != null)
                     ? Color.clear
                     : ActiveCellColor;
-            gridImage.enabled = gridSprite != null;
-            gridImage.sprite = gridSprite;
+            gridImage.enabled = !hasSoftCover && gridSprite != null;
+            gridImage.sprite = gridImage.enabled ? gridSprite : null;
             gridImage.color = Color.white;
-            softCoverImage.enabled = cell.SoftCoverLayers > 0;
+            softCoverImage.enabled = hasSoftCover;
             specialOverlayPrimary.enabled = false;
             specialOverlaySecondary.enabled = false;
-            var softCoverSprite = catalog != null ? catalog.SoftCoverSprite : null;
             softCoverImage.sprite = softCoverImage.enabled ? softCoverSprite : null;
             softCoverImage.color = softCoverImage.enabled
                 ? softCoverSprite != null
@@ -107,6 +112,7 @@ namespace CharacterMatch3.Board
                         ? SoftCoverMultiLayerFallbackColor
                         : SoftCoverSingleLayerFallbackColor
                 : Color.clear;
+            ApplySoftCoverBounds(softCoverImage.enabled && softCoverSprite != null);
 
             blockerLabel.text = string.Empty;
             if (cell.CrateLayers > 0)
@@ -374,6 +380,50 @@ namespace CharacterMatch3.Board
             blockerLabel = UIFactory.CreateText("BlockerLabel", transform, string.Empty, 20, TextAnchor.LowerCenter, new Color(0.14f, 0.06f, 0.02f));
             blockerLabel.raycastTarget = false;
             UIFactory.SetAnchored(blockerLabel.rectTransform, Vector2.zero, Vector2.one, new Vector2(2, 2), new Vector2(-2, -2));
+        }
+
+        private void ApplySoftCoverBounds(bool matchGridVisualSize)
+        {
+            if (!matchGridVisualSize)
+            {
+                UIFactory.Stretch(softCoverImage.rectTransform);
+                return;
+            }
+
+            var cellSize = ResolveCellSize();
+            var targetVisibleSize = new Vector2(
+                (cellSize.x + GridSpriteOverscan * 2f) * GridSpriteVisibleWidthRatio,
+                (cellSize.y + GridSpriteOverscan * 2f) * GridSpriteVisibleHeightRatio);
+            var softCoverRectSize = new Vector2(
+                targetVisibleSize.x / SoftCoverSpriteVisibleWidthRatio,
+                targetVisibleSize.y / SoftCoverSpriteVisibleHeightRatio);
+            var overscan = new Vector2(
+                Mathf.Max(0f, (softCoverRectSize.x - cellSize.x) * 0.5f),
+                Mathf.Max(0f, (softCoverRectSize.y - cellSize.y) * 0.5f));
+
+            UIFactory.SetAnchored(
+                softCoverImage.rectTransform,
+                Vector2.zero,
+                Vector2.one,
+                new Vector2(-overscan.x, -overscan.y),
+                new Vector2(overscan.x, overscan.y));
+        }
+
+        private Vector2 ResolveCellSize()
+        {
+            if (transform.parent != null && transform.parent.TryGetComponent<GridLayoutGroup>(out var grid) &&
+                grid.cellSize.x > 1f && grid.cellSize.y > 1f)
+            {
+                return grid.cellSize;
+            }
+
+            var rectTransform = transform as RectTransform;
+            if (rectTransform != null && rectTransform.rect.width > 1f && rectTransform.rect.height > 1f)
+            {
+                return rectTransform.rect.size;
+            }
+
+            return new Vector2(100f, 100f);
         }
 
         private void ConfigureSpecialOverlay(BoardPiece piece)

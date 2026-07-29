@@ -20,6 +20,7 @@ namespace CharacterMatch3.Save
     public static class SaveManager
     {
         private const string SaveKey = "CharacterMatch3.Save.v1";
+        private const bool UnlockAllLevelsForTesting = true;
         private static CharacterMatch3SaveData data;
 
         public static CharacterMatch3SaveData Data
@@ -50,6 +51,12 @@ namespace CharacterMatch3.Save
         public static bool IsLevelUnlocked(int levelNumber)
         {
             EnsureLoaded();
+            if (UnlockAllLevelsForTesting)
+            {
+                return levelNumber >= CharacterMatch3Constants.FirstLevel &&
+                       levelNumber <= CharacterMatch3Constants.LastLevel;
+            }
+
             return levelNumber <= data.highestUnlockedLevel;
         }
 
